@@ -51,7 +51,7 @@
       var sig = el.classList.contains('pd'), L = d.width; h = d.height;
       var i = document.createElement('i'); i.className = sig ? 'c' : 'k'; i.style.width = L + 'px'; i.style.height = h + 'px'; layer.appendChild(i);
       var body = mk(i, L, h, d.left - b.left + L / 2, d.top - b.top + h / 2, sig ? 'sig' : 'ink', k);
-      body.w = { tx: tx, x0: t.left - b.left, ww: t.width || 1, clip: null };
+      body.w = { tx: tx, x0: t.left - b.left, y0: t.top - b.top, ww: t.width || 1, clip: null, pad: Math.max(0, t.height / 2 - h / 2 + em * .06) };
       bodies.push(body); words.push(body);
       var r = null; for (var j = 0; j < rows.length; j++) if (Math.abs(rows[j].y - body.hy) < h) { r = rows[j]; break; }
       if (!r) { r = { y: body.hy, x1: 0, ls: [] }; rows.push(r); }
@@ -81,7 +81,9 @@
     var emEnd = Math.min((W - 2 * M) / 17.3, (SH - 40) / 6.4); K = clamp(emEnd / em, .45, 1);
     var hr = hl.getBoundingClientRect(); OX = M; OY = hr.top - b.top + hr.height / 2;
     var ink = words.filter(function (l) { return l.kind === 'ink'; }), sig = words.filter(function (l) { return l.kind === 'sig'; })[0];
-    var hE = h * K, pitch2 = hE * 1.55, n2 = ink.length, x0 = W - M - hE / 2 - (n2 - 1) * pitch2;
+    var textR = Math.max.apply(null, rows.map(function (r) { return r.x1; }));
+    for (var it = 0; it < 40; it++) { var tE = OX + (textR - OX) * K, room = W - M - tE - em * K * 1.1; if (ink.length * h * K * 1.5 <= room) break; K *= .96; }
+    var hE = h * K, pitch2 = hE * 1.5, n2 = ink.length, x0 = W - M - hE / 2 - (n2 - 1) * pitch2;
     var midY = OY + (rows[Math.floor(rows.length / 2)].y - OY) * K;
     ink.concat(sig ? [sig] : []).forEach(function (l, j) {
       l.sx = x0 + j * pitch2; l.sy = midY; l.sa = Math.PI / 2 + (j % 2 ? -1 : 1) * (.05 + hash(j, 12) * .06);
@@ -128,7 +130,7 @@
     var x = l.hx + (off - l.hx) * ua + (l.sx - off) * ub, y = l.hy + (l.sy - l.hy) * ub, k = 1 + (K - 1) * ub;
     return [x - l.hx, y - l.hy, l.sa * ub, k];
   }
-  function textScale(Q) { return 1 + (K - 1) * sm((Q - .36) / .42); }
+  function textScale(Q) { return 1 + (K - 1) * sm((Q - .36) / .26); }
 
   function step(dt) {
     if (MODE === 7) for (var ri = 0; ri < bodies.length; ri++) {
@@ -146,7 +148,12 @@
       var away = q > l.a0 + .01;              // once a line is leaving, the hand lets it go
       // mode targets from the hand (pose offsets, not forces)
       if (inside && !away) {
-        if (MODE === 2) { tx += -(px - cxs) * .06 * l.d; ty += -(py - cys) * .05 * l.d; }
+        if (MODE === 2) {
+          var dz = l.kind === 'rep' ? l.d * .5 : (l.d - 1) * 2.2 + (hash(l.k, 31) - .5) * 1.4;   // each line its own depth
+          tx += -(px - cxs) * .16 * dz; ty += -(py - cys) * .1 * dz;
+          var ddx = l.hx - px, ddy = l.hy - py, dd2 = Math.hypot(ddx, ddy * 1.6), gz = Math.max(0, 1 - dd2 / (R * 2.2));
+          ty += (ddy >= 0 ? 1 : -1) * gz * gz * em * .55;          // and the nearest lines give way above or below
+        }
         if (MODE === 3) {
           var g3 = Math.max(0, 1 - Math.abs(px - l.hx) / (l.L / 2 + R)) * Math.max(0, 1 - Math.abs(py - l.hy) / (R * 1.2));
           g3 = g3 * g3 * (3 - 2 * g3); ty -= g3 * em * (l.kind === 'rep' ? .6 : 1.05); ta += (px < l.hx ? 1 : -1) * g3 * .12;
@@ -203,25 +210,20 @@
     lim(c, dy * s, l.L / 2); lim(-s, dy * c, l.h / 2);
     return hi > lo ? [l.x + lo, l.x + hi] : null;
   }
+  // a word is hidden exactly under its own line (its real, tilted rectangle), stretched over the full height of the
+  // letters while the line is still near home, and shrinking to the line itself as it moves away
   function clipWord(l) {
-    var w = l.w, cov = [], tiny = em * .1;
+    var w = l.w;
     if (q > .3 || (MODE === 7 && (l.rv || 0) > .97)) { if (w.clip !== 'none') { w.tx.style.clipPath = 'none'; w.clip = 'none'; } return; }
-    [l.hy - l.h * .45, l.hy, l.hy + l.h * .45].forEach(function (yy) { var iv = interval(l, yy); if (iv) cov.push([iv[0] - w.x0, iv[1] - w.x0]); });
-    var a = 1e9, bb = -1e9; cov.forEach(function (c) { a = Math.min(a, c[0]); bb = Math.max(bb, c[1]); });
-    var vis = [];
-    if (!cov.length) vis.push([0, w.ww]);
-    else { if (a > tiny) vis.push([0, Math.min(a, w.ww)]); if (w.ww - bb > tiny) vis.push([Math.max(bb, 0), w.ww]); }
-    vis = vis.filter(function (p) { return p[1] - p[0] >= tiny; });
-    var css;
-    if (!vis.length) css = 'polygon(0 0,0 0,0 0)';
-    else if (vis.length === 1 && vis[0][0] <= 0 && vis[0][1] >= w.ww) css = 'none';
-    else css = 'polygon(' + vis.map(function (p) {
-      var A = (clamp(p[0] / w.ww, 0, 1) * 100).toFixed(2) + '%', B = (clamp(p[1] / w.ww, 0, 1) * 100).toFixed(2) + '%';
-      return A + ' -40%,' + A + ' 140%,' + B + ' 140%,' + B + ' -40%';
-    }).join(',') + ')';
+    var off = Math.hypot(l.x - l.hx, l.y - l.hy) + Math.abs(l.a) * l.L * .5, near = Math.max(0, 1 - off / (em * .9));
+    var hh = l.h / 2 + w.pad * near, c = Math.cos(l.a), s = Math.sin(l.a), hw = l.L / 2 + 1;
+    var pts = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(function (p) {
+      var X = l.x + p[0] * c - p[1] * s - w.x0, Y = l.y + p[0] * s + p[1] * c - w.y0;
+      return X.toFixed(1) + 'px ' + Y.toFixed(1) + 'px';
+    });
+    var css = 'polygon(evenodd,-9999px -9999px,9999px -9999px,9999px 9999px,-9999px 9999px,-9999px -9999px,' + pts.join(',') + ',' + pts[0] + ')';
     if (css !== w.clip) { w.tx.style.clipPath = css; w.clip = css; }
   }
-
   function progress() { var r = H.getBoundingClientRect(), span = H.offsetHeight - innerHeight; return span > 0 ? clamp(-r.top / span, 0, 1) : 0; }
   function tick(now) {
     var dtAll = tPrev ? Math.min((now - tPrev) / 1000, 1 / 20) : 1 / 60; tPrev = now;

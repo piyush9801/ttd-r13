@@ -1,0 +1,47 @@
+/* The Talent Dept. · round 13 (21 Oct 2026). Loaded last. The client's notes: a hero that fills the screen with solid,
+   unbroken lines over the statement; the messaging structure (Talent / Strategy / Relationships with its line, the
+   right person statement given a prominent place, The Work's services sentence, name + title + email together);
+   and a quiet pass on hierarchy, readability and spacing. */
+
+/* ---- hero: the statement is set big, the composition owns the screen */
+.js:not(.still) .hero4.h13{height:250vh}
+.h13 .hb{font-size:min(calc((100vw - 2 * var(--m)) / 10.4), calc((100vh - 170px) / 4.3));line-height:1.14}
+.h13 .hl{top:50%;transform:translateY(-50%)}
+.h13 .hl .dash{top:.3em;height:.62em}
+.h13.ln-on .hl .dash{visibility:hidden}
+.h13 .ln13{position:absolute;inset:0;pointer-events:none;z-index:3}
+.h13 .ln13 i{position:absolute;left:0;top:0;display:block;transform-origin:50% 50%;will-change:transform}
+.h13 .ln13 i.k{background:var(--ink)}
+.h13 .ln13 i.c{background:var(--coral)}
+.h13 .ln13 i.r{background:var(--draft);z-index:-1}
+.h13.ln-off .hl .dash{display:none}
+.js .h13.ln-off .hl .tx{clip-path:none!important}
+.js:not(.still) .hero4.h13.ln-off{height:auto}
+
+/* ---- Talent / Strategy / Relationships: the line that says what TTD does */
+.chairs2 .foot2 .ch-p{grid-column:1/8;max-width:24em;font-size:clamp(20px,1.9vw,32px);line-height:1.25;font-weight:400;color:var(--cream)}
+.chairs2 .foot2 .lbl{align-self:end}
+
+/* ---- the right person: one full statement, then the hallway, full bleed */
+.rp{background:var(--light);padding:20vh 0 0}
+.rp-h{padding:0 var(--m);font-size:clamp(46px,6.6vw,132px);line-height:1;letter-spacing:-.032em;font-weight:300;max-width:13.5em;text-wrap:balance}
+.rp-h b{font-weight:500}
+.rp-f{margin:12vh 0 0;line-height:0;order:2}
+.rp{display:flex;flex-direction:column}
+.rp-f img{display:block;width:100%;aspect-ratio:21/9;object-fit:cover;object-position:50% 45%;filter:grayscale(1) contrast(1.13)}
+
+/* ---- The Work: the services sentence under the closing line */
+.wk-p{grid-column:1/8;margin-top:5vh;font-size:clamp(18px,1.45vw,24px);line-height:1.45;max-width:30em;color:var(--ink70)}
+
+/* ---- The Dept.: name, title and email read as one group */
+.pb-w{grid-column:2/7;grid-row:2;margin-top:3vh;font-size:clamp(15px,1.05vw,18px)}
+.pb-w .lab{font-weight:500;color:var(--ink)}
+.pb-t{grid-column:2/8;grid-row:3;margin-top:6vh}
+.pb-p{grid-row:2/4}
+
+/* ---- readability: body never below 16px, labels one size, steady section rhythm */
+body{font-size:max(16px,1.05vw)}
+.lbl{font-size:12px;letter-spacing:.08em}
+.pb-rest,.svp-b .bd{font-size:max(15px,.98vw);line-height:1.55}
+.h13 .hl{transform-origin:var(--m) 50%}
+.h13 .ln13 i.f.k{background:var(--ink)} .h13 .ln13 i.f.r{background:var(--draft)}

@@ -1,0 +1,138 @@
+/* The Talent Dept. · round 12 · v1 Rhythm. Loaded after r10.css, r10-contrast.css and r11.css.
+   "Every conversation has a rhythm." The hero's Line of Sight stands up into the brand's large-scale Rhythm; the
+   Rhythm then returns once per page at medium or fine scale. Mostly tan, black in hints, one coral presence. */
+
+/* ------------------------------------------------------------------ hero
+   Beside (wide screens): the statement on the left in three lines, the rhythm on the right, both centred on the
+   statement's middle line. Below (phones, portrait tablets): four lines at the top, the rhythm under them.
+   The type size is set so the statement, a lane and the rhythm fit the width, and the tallest bar the height. */
+.hero4.rh{--s:.42em}
+.js:not(.still) .hero4.rh{height:330vh}
+.rh .hb{--mode:beside;position:absolute;inset:0;top:0;transform:none;
+  font-size:min(calc((100vw - 2 * var(--m)) / 17.3),calc((100vh - 170px) / 7.6));line-height:1.16}
+.rh .hl{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);padding:0 var(--m);white-space:nowrap;
+  font-weight:300;letter-spacing:-.026em;will-change:auto}
+.rh .hl br.m{display:none}
+.rh .hl .dash{top:.48em;height:var(--s)}
+.rh .hl .pd .tx{min-width:0}
+html:not(.js) .rh .hl .dash{display:none}
+.rh .sw{position:absolute;inset:0;pointer-events:none;z-index:3}
+.rh .sw.sw-back{z-index:0}
+.rh .hl{z-index:1}
+.rh .sw i{position:absolute;left:0;top:0;display:block;background:var(--ink);transform-origin:50% 50%;will-change:transform}
+.rh .sw i.c{background:var(--coral)}
+.rh .sw i.r{background:var(--draft)}
+@media (max-width:899px),(max-aspect-ratio:11/10){
+  .rh .hb{--mode:below;font-size:min(calc((100vw - 2 * var(--m)) / 7.9),calc((100vh - 130px) / 12.6))}
+  .rh .hl{top:calc(50% - 6.2em);transform:none}
+  .rh .hl br.m{display:inline}
+  .rh .hl br.d{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .js:not(.still) .hero4.rh{height:auto}
+  .js .rh .hl .dash{display:block;visibility:hidden}     /* still measured: the blocks are built from them */
+}
+
+/* ------------------------------------------------------------------ The Work: the seven services as the Rhythm
+   Seven bars of the book's rhythm mark on one centre line, the names set horizontally beneath them, Talent Booking
+   the Signal. The chosen bar is Ink, the others Draft; the chosen service opens below, all panels sharing one cell
+   so the page never jumps. No spines, no vertical type, no ruled rows. */
+.ag-w{padding-bottom:12vh}
+.ag-w .ag-p{margin-top:8vh}
+.svc{padding:11vh var(--m) 17vh}
+.svc-hd{display:flex;justify-content:space-between;align-items:baseline}
+.svc-rh{--H:min(44vh,29vw);margin-top:5vh;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:var(--g)}
+.sv{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-rows:var(--H) auto auto;justify-items:center;text-align:center;
+  -webkit-tap-highlight-color:transparent}
+.sv .bar{align-self:center;display:block;width:clamp(16px,5.2vw,90px);height:calc(var(--H) * var(--h));background:var(--draft);
+  transform-origin:50% 50%;transition:background-color .35s ease,transform .6s cubic-bezier(.34,1.56,.64,1)}
+.sv.on .bar{background:var(--ink)}
+.sv.sig .bar{background:var(--coral)}
+.svc-rh:not(.pre) .sv:hover .bar{transform:scaleY(1.05)}
+.sv:not(.on):not(.sig):hover .bar{background:var(--ink70)}
+.sv .n{margin-top:3.4vh;font:500 12px/1 var(--f);letter-spacing:.08em;color:var(--ink70);font-variant-numeric:tabular-nums}
+.sv .nm{margin-top:.75em;font-size:clamp(15px,1.25vw,21px);line-height:1.25;color:var(--ink70);max-width:10em;text-wrap:balance;transition:color .3s ease}
+.sv.on .nm,.sv:hover .nm{color:var(--ink)}
+.sv.on .n{color:var(--ink)}
+.sv:focus-visible .nm{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.25em}
+.svc-ps{display:grid;margin-top:10vh}
+.svp{grid-area:1/1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);align-items:start}
+.svc-js .svp{visibility:hidden}
+.svc-js .svp.on{visibility:visible}
+html:not(.svc-js) .svp+.svp{margin-top:10vh}
+html:not(.svc-js) .svc-ps{display:block}
+.svp-a{grid-column:1/6}
+.svp-a h3{margin-top:.55em;font-size:var(--d2);line-height:1.04;letter-spacing:-.02em;font-weight:300;max-width:10.5em;text-wrap:balance}
+.svp-b{grid-column:7/13;padding-top:calc(12px * 1.45 + .55em)}
+.svp-b .ld{font-size:var(--d4);line-height:1.3;font-weight:400;max-width:24em}
+.svp-b .bd{margin-top:.9em;color:var(--ink70);max-width:32em}
+.svp-b .it{margin-top:4.4vh;display:grid;grid-template-columns:1fr 1fr;column-gap:calc(var(--g) * 2);row-gap:.85em;font-size:var(--small);line-height:1.4}
+.svp-b .it li{display:flex;gap:.8em;align-items:baseline}
+.svp-b .it li::before{content:"";flex:none;width:1.1em;height:3px;background:var(--ink);transform:translateY(-.28em)}
+.svp.sig .it li::before{background:var(--ink)}
+@media (max-width:760px){
+  .svc{padding:90px var(--m) 100px}
+  .svc-rh{--H:min(230px,52vw);margin-top:28px;column-gap:4px}
+  .sv .bar{width:min(26px,6.4vw)}
+  .sv .n{margin-top:16px}
+  .sv .nm{display:none}
+  .svc-ps{margin-top:44px}
+  .svp{display:block}
+  .svp-a h3{font-size:9.4vw;margin-top:.4em}
+  .svp-b{padding-top:20px}
+  .svp-b .it{grid-template-columns:1fr;margin-top:26px}
+}
+
+/* ------------------------------------------------------------------ The Work, closing: the line whole, then the strip */
+.wk-close{padding:17vh 0 0;overflow-x:clip}
+.wk-t{padding:0 var(--m);display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);align-items:end}
+.wk-h{grid-column:1/10;font-size:clamp(40px,5.6vw,112px);line-height:1;letter-spacing:-.03em;font-weight:300;text-wrap:balance}
+.wk-h b{font-weight:500}
+.wk-s{grid-column:10/13;font-size:var(--d4);line-height:1.25;padding-bottom:.45em;max-width:12em}
+.wk-close .strip{margin-top:10vh;display:grid;grid-template-columns:.62fr 1fr 1fr .62fr;gap:clamp(8px,1vw,16px)}
+.wk-close .strip figure{margin:0}
+.wk-close .strip img{display:block;width:100%;aspect-ratio:3/2;height:100%;object-fit:cover}
+.wk-close .strip figure:first-child img,.wk-close .strip figure:last-child img{aspect-ratio:auto}
+@media (max-width:760px){
+  .wk-close{padding-top:100px}
+  .wk-t{display:block}
+  .wk-h{font-size:11.4vw}
+  .wk-s{margin-top:22px}
+  .wk-close .strip{grid-template-columns:.4fr 1fr .4fr;margin:48px -10vw 0}
+  .wk-close .strip figure:nth-child(3){display:none}
+}
+
+/* ------------------------------------------------------------------ The Dept.
+   The photograph arrives through the Rhythm (js/dept.js); the page's tan shows between the bars. How we show up
+   keeps its layers but loses the black: the plane is Draft, the lines on it Ink. */
+.ag-ph.rw{background:var(--tan)}
+.l3-plane{background:var(--draft)}
+.l3-m{color:var(--ink)}
+.l3-m span{color:var(--ink70)}
+.l3-end .lbl{color:var(--ink)}
+.l3-end .u{color:var(--ink);border-color:rgba(23,22,20,.45)}
+@media (max-width:760px){
+  .l3-m,.l3-end{background:var(--draft)!important}
+}
+
+/* ------------------------------------------------------------------ Contact: the Rhythm at fine scale, beside the
+   address. Still until the hand comes over the address; then it rises from the middle out like a voice about to speak,
+   and settles back with a small overshoot when the hand leaves. */
+.ct-t .fr{display:flex;align-items:center;gap:clamp(5px,.5vw,9px);height:clamp(64px,6.4vw,112px);margin-bottom:1.2em}
+.ct-t .fr i{display:block;width:clamp(4px,.36vw,7px);height:calc(100% * var(--h));background:var(--ink);transform-origin:50% 50%;
+  transition:transform .7s cubic-bezier(.34,1.56,.64,1) var(--d)}
+.ct-t:hover .fr i{transform:scaleY(var(--k))}
+@media (hover:none){ .ct-t .fr i{transition:none} }
+
+/* home, More than booking: each service opens its own panel on The Work */
+.vb-s li a{text-decoration:none;color:inherit;transition:color .25s ease}
+.vb-s li a:hover{color:var(--ink70)}
+
+/* ---- v6 Line: one solid line per word, never broken */
+.rh.ln-on .hl .dash{visibility:hidden}
+.rh .sw.ln i{background:var(--ink);transition:background-color .45s ease}
+.rh .sw.ln i.c{background:var(--coral)}
+.rh.ln-off .hl .dash{display:none}
+.js .rh.ln-off .hl .tx{clip-path:none!important}
+.js:not(.still) .hero4.rh{height:300vh}
+.js:not(.still) .hero4.rh.ln-off{height:auto}

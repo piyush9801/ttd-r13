@@ -45,3 +45,9 @@ body{font-size:max(16px,1.05vw)}
 .pb-rest,.svp-b .bd{font-size:max(15px,.98vw);line-height:1.55}
 .h13 .hl{transform-origin:var(--m) 50%}
 .h13 .ln13 i.f.k{background:var(--ink)} .h13 .ln13 i.f.r{background:var(--draft)}
+
+/* ---- review switcher: five hero options on one link (remove before launch) */
+.hsw{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;display:flex;gap:18px;align-items:baseline;padding:10px 18px;background:var(--light);font-size:14px;white-space:nowrap}
+.hsw a{color:var(--ink70);text-decoration:none}
+.hsw a.on{color:var(--ink);font-weight:500}
+.hsw a.on::after{content:".";color:var(--coral)}

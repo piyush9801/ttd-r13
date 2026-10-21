@@ -10,11 +10,13 @@
    ?m=2 depth  lines sit at different depths in front of the words; the hand shifts them by parallax
    ?m=3 lift   lines near the hand lift like lids
    ?m=5 hinge  lines hinge at their left end and swing open for the hand
-   ?m=6 field  the whole screen is bars; the hand sets the whole field moving; scroll breaks it apart */
+   ?m=6 field  the whole screen is bars; the hand sets the whole field moving; scroll breaks it apart
+   ?m=7 reveal the moment the hand enters, every line slides aside (a ripple out from the hand) and the whole
+               statement is said before any scroll; the lines come back when the hand leaves */
 (function () {
   var H = document.querySelector('.hero4.h13'); if (!H) return;
   var root = document.documentElement, q0 = location.search.match(/[?&]m=(\d)/);
-  var MODE = q0 ? +q0[1] : 1; if (MODE < 1 || MODE > 6 || MODE === 4) MODE = 1;
+  var MODE = q0 ? +q0[1] : 1; if (MODE < 1 || MODE > 7 || MODE === 4) MODE = 1;
   H.setAttribute('data-m', MODE);
   var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   var STILL = root.classList.contains('still') || reduce;
@@ -27,7 +29,7 @@
   function ein(t) { t = clamp(t, 0, 1); return t * t * t; }
   function hash(i, s) { var x = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return x - Math.floor(x); }
 
-  var CB = null, K = .6, OX = 0, OY = 0, W = 1, SH = 1, em = 16, M = 20, R = 100, bodies = [], words = [], built = false;
+  var REVEAL_MOVING = false, CB = null, K = .6, OX = 0, OY = 0, W = 1, SH = 1, em = 16, M = 20, R = 100, bodies = [], words = [], built = false;
   var q = 0, px = -1e4, py = -1e4, pvx = 0, pvy = 0, inside = false, lastT = 0, running = false, tPrev = 0;
   var SPR = { w: 8.4, z: .6 }, SPA = { w: 9.2, z: .55 }, FR = 2.4;
   var WID = [18, 44, 48, 92, 104, 111, 127, 144, 183];          // the brand's dash lengths, for the replies
@@ -120,7 +122,7 @@
       var e = sm((Q - l.a0) / (l.a1 - l.a0)), far = l.side > 0 ? W - l.hx + l.L : -(l.hx + l.L);
       return [far * e, 0, 0, 1];
     }
-    var ua = sm((Q - l.a0) / (l.a1 - l.a0)), ub = sm((Q - l.b0) / (l.b1 - l.b0));
+    var ua = Math.max(sm((Q - l.a0) / (l.a1 - l.a0)), MODE === 7 ? sm(l.rv || 0) : 0), ub = sm((Q - l.b0) / (l.b1 - l.b0));
     // A: slide along the row to the column it will stand in. B: tip up into the bar, leaning, at the final size
     var off = W + l.L * .6 + 30;                               // A: the line leaves its word and the frame, to the right
     var x = l.hx + (off - l.hx) * ua + (l.sx - off) * ub, y = l.hy + (l.sy - l.hy) * ub, k = 1 + (K - 1) * ub;
@@ -129,6 +131,12 @@
   function textScale(Q) { return 1 + (K - 1) * sm((Q - .36) / .42); }
 
   function step(dt) {
+    if (MODE === 7) for (var ri = 0; ri < bodies.length; ri++) {
+      var rb = bodies[ri], tgt = inside ? 1 : 0, dd = Math.hypot(px - rb.hx, py - rb.hy) / W;
+      var rate = inside ? 2.6 / (1 + dd * 5) : 1.8 / (1 + (1 - dd) * 2);      // in: nearest first; out: farthest first
+      rb.rv = (rb.rv || 0) + (tgt - (rb.rv || 0)) * Math.min(1, rate * dt);
+      if (Math.abs(tgt - rb.rv) > .002) REVEAL_MOVING = true;
+    }
     var moving = false, spd = Math.sqrt(pvx * pvx + pvy * pvy), i, j, l;
     var kL = SPR.w * SPR.w, cL = 2 * SPR.z * SPR.w, kA = SPA.w * SPA.w, cA = 2 * SPA.z * SPA.w;
     var cxs = W / 2, cys = SH * .45;
@@ -197,7 +205,7 @@
   }
   function clipWord(l) {
     var w = l.w, cov = [], tiny = em * .1;
-    if (q > .3) { if (w.clip !== 'none') { w.tx.style.clipPath = 'none'; w.clip = 'none'; } return; }
+    if (q > .3 || (MODE === 7 && (l.rv || 0) > .97)) { if (w.clip !== 'none') { w.tx.style.clipPath = 'none'; w.clip = 'none'; } return; }
     [l.hy - l.h * .45, l.hy, l.hy + l.h * .45].forEach(function (yy) { var iv = interval(l, yy); if (iv) cov.push([iv[0] - w.x0, iv[1] - w.x0]); });
     var a = 1e9, bb = -1e9; cov.forEach(function (c) { a = Math.min(a, c[0]); bb = Math.max(bb, c[1]); });
     var vis = [];
@@ -219,7 +227,9 @@
     var dtAll = tPrev ? Math.min((now - tPrev) / 1000, 1 / 20) : 1 / 60; tPrev = now;
     q = progress(); pvx *= Math.pow(.02, dtAll); pvy *= Math.pow(.02, dtAll);
     var n = Math.max(1, Math.ceil(dtAll / (1 / 240))), dt = dtAll / n, moving = false;
+    REVEAL_MOVING = false;
     for (var i = 0; i < n; i++) moving = step(dt) || moving;
+    if (REVEAL_MOVING) moving = true;
     // keep going while any body is still away from where it was asked to be
     for (var j = 0; j < bodies.length && !moving; j++) { var l = bodies[j], T = exitPose(l, q); if (Math.abs(l.hx + T[0] - l.x) + Math.abs(l.hy + T[1] - l.y) > .4 || Math.abs(T[2] - l.a) > .003) moving = true; l.k = T[3]; }
     if (inside) moving = moving || Math.abs(pvx) + Math.abs(pvy) > .3;

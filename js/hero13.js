@@ -31,7 +31,7 @@
 
   var REVEAL_MOVING = false, CB = null, K = .6, OX = 0, OY = 0, W = 1, SH = 1, em = 16, M = 20, R = 100, bodies = [], words = [], built = false;
   var q = 0, px = -1e4, py = -1e4, pvx = 0, pvy = 0, inside = false, lastT = 0, running = false, tPrev = 0;
-  var SPR = { w: 8.4, z: .6 }, SPA = { w: 9.2, z: .55 }, FR = 2.4;
+  var SPR = { w: 6.6, z: .42 }, SPA = { w: 7.4, z: .4 }, FR = 1.2;
   var WID = [18, 44, 48, 92, 104, 111, 127, 144, 183];          // the brand's dash lengths, for the replies
 
   function mk(el, L, h, cx, cy, kind, k) {
@@ -61,13 +61,13 @@
     rows.forEach(function (r, i) { r.ls.forEach(function (l) { l.row = i; }); });
     // the replies: Draft dashes after each line of the statement and on a row above and below, to the margins
     var pitch = rows.length > 1 ? rows[1].y - rows[0].y : em * 1.2, n = 0;
-    var top = rows[0].y, bot = rows[rows.length - 1].y, gap = pitch * .62, replyRows = [];
-    for (var u = 1; top - gap * u > em * .9; u++) replyRows.push({ y: top - gap * u + pitch * .1, x0: M + em * (u % 2 ? 1.4 : .2) + hash(u, 2) * em, row: -u });
+    var top = rows[0].y, bot = rows[rows.length - 1].y, gap = pitch * .56, replyRows = [];
+    for (var u = 1; top - gap * u > em * .35; u++) replyRows.push({ y: top - gap * u + pitch * .1, x0: M + em * (u % 2 ? 1.4 : .2) + hash(u, 2) * em, row: -u });
     rows.forEach(function (r, i) { replyRows.push({ y: r.y, x0: r.x1 + em * .55, row: i, after: true }); });
-    for (var v = 1; bot + gap * v < SH - em * .5; v++) replyRows.push({ y: bot + gap * v - pitch * .1, x0: M + em * (v % 2 ? 2.6 : .9) + hash(v, 8) * em, row: rows.length + v });
+    for (var v = 1; bot + gap * v < SH - em * .25; v++) replyRows.push({ y: bot + gap * v - pitch * .1, x0: M + em * (v % 2 ? 2.6 : .9) + hash(v, 8) * em, row: rows.length + v });
     if (MODE === 6) replyRows = [];
     replyRows.forEach(function (rr, ri) {
-      var x = rr.x0, hh = rr.after ? h * .62 : h * .34;
+      var x = rr.x0, hh = rr.after ? h * .78 : h * .46;
       while (x < W - M - 10) {
         var L = WID[Math.floor(hash(ri * 17 + n, 5) * WID.length)] * em / 64;
         if (x + L > W - M) L = W - M - x; if (L < em * .25) break;
@@ -181,13 +181,17 @@
     // lines on one row shove each other instead of passing through (m1, m4)
     if ((MODE === 1 || MODE === 6) && q < .02) for (i = 0; i < bodies.length; i++) for (j = i + 1; j < bodies.length; j++) {
       var A = bodies[i], B = bodies[j];
-      if (A.row !== B.row || A.kind === 'field' && B.kind !== 'field' || Math.abs(A.a) > .35 || Math.abs(B.a) > .35) continue;
-      if (Math.abs(A.y - B.y) > (A.h + B.h) / 2) continue;
-      var ov = (A.L + B.L) / 2 + 3 - Math.abs(A.x - B.x);
-      if (ov > 0) { var sg = A.x < B.x ? -1 : 1, kk = 1400 * ov * dt; A.vx += sg * kk / A.m; B.vx -= sg * kk / B.m; }
+      if (Math.abs(A.a) > .45 || Math.abs(B.a) > .45) continue;
+      var ox = (A.L + B.L) / 2 + 2 - Math.abs(A.x - B.x), oy = (A.h + B.h) / 2 + 2 - Math.abs(A.y - B.y);
+      if (ox <= 0 || oy <= 0) continue;
+      var kk2 = 1800 * dt;
+      if (ox < oy * 2.2) { var sg = A.x < B.x ? -1 : 1; A.vx += sg * kk2 * ox / A.m; B.vx -= sg * kk2 * ox / B.m; }
+      else { var sv = A.y < B.y ? -1 : 1; A.vy += sv * kk2 * oy / A.m; B.vy -= sv * kk2 * oy / B.m; A.va += (B.x - A.x) * sv * .0004; B.va -= (A.x - B.x) * sv * .0004; }
     }
     for (i = 0; i < bodies.length; i++) {
       l = bodies[i]; l.x += l.vx * dt; l.y += l.vy * dt; l.a += l.va * dt;
+      if (q < .02) { var lo = l.L / 2 * .3; if (l.x < lo) { l.x = lo; l.vx = Math.abs(l.vx) * .45; } if (l.x > W - lo) { l.x = W - lo; l.vx = -Math.abs(l.vx) * .45; }
+        if (l.y < 0) { l.y = 0; l.vy = Math.abs(l.vy) * .45; } if (l.y > SH) { l.y = SH; l.vy = -Math.abs(l.vy) * .45; } }
       if (Math.abs(l.vx) + Math.abs(l.vy) > 1.5 || Math.abs(l.va) > .02) moving = true;
     }
     return moving;
@@ -213,7 +217,10 @@
   // a word is hidden exactly under its own line (its real, tilted rectangle), stretched over the full height of the
   // letters while the line is still near home, and shrinking to the line itself as it moves away
   function clipWord(l) {
-    var w = l.w;
+    var w = l.w, ua = sm((q - l.a0) / (l.a1 - l.a0));
+    var drift = Math.sin(Math.PI * Math.min(1, ua * 1.15)) * em * .09 * (1 - ua * .4);
+    var dtf = drift > .1 ? 'translateX(' + drift.toFixed(2) + 'px)' : '';
+    if (dtf !== w.tf) { w.tx.style.transform = dtf; w.tf = dtf; }
     if (q > .3 || (MODE === 7 && (l.rv || 0) > .97)) { if (w.clip !== 'none') { w.tx.style.clipPath = 'none'; w.clip = 'none'; } return; }
     var off = Math.hypot(l.x - l.hx, l.y - l.hy) + Math.abs(l.a) * l.L * .5, near = Math.max(0, 1 - off / (em * .9));
     var hh = l.h / 2 + w.pad * near, c = Math.cos(l.a), s = Math.sin(l.a), hw = l.L / 2 + 1;

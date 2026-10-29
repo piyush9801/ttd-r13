@@ -133,3 +133,4 @@ body{font-size:max(16px,1.05vw)}
   .cta{padding:90px var(--m)} .cta-a{font-size:11vw}
   .foot3{padding-top:90px} .foot3 .mail{font-size:7vw} .foot3 .base{margin-top:70px}
 }
+.rv-f{overflow:hidden}

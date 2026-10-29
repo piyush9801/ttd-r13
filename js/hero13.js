@@ -12,11 +12,15 @@
    ?m=5 hinge  lines hinge at their left end and swing open for the hand
    ?m=6 field  the whole screen is bars; the hand sets the whole field moving; scroll breaks it apart
    ?m=7 reveal the moment the hand enters, every line slides aside (a ripple out from the hand) and the whole
-               statement is said before any scroll; the lines come back when the hand leaves */
+               statement is said before any scroll; the lines come back when the hand leaves
+   ?m=8 black  (option 7, Lisa 21 Oct) the whole screen is black: a wall of charcoal lines under a charcoal nav,
+               one Signal square where the full stop is. The hand startles the lines into blocks that scatter like
+               bugs, glide to a stop, wait, then creep home; a click breaks the wall apart from that point. The
+               scroll parts the wall from the centre, then the lines return as the sound bars */
 (function () {
   var H = document.querySelector('.hero4.h13'); if (!H) return;
   var root = document.documentElement, q0 = location.search.match(/[?&]m=(\d)/);
-  var MODE = q0 ? +q0[1] : 1; if (MODE < 1 || MODE > 7 || MODE === 4) MODE = 1;
+  var MODE = q0 ? +q0[1] : 1; if (MODE < 1 || MODE > 8 || MODE === 4) MODE = 1;
   H.setAttribute('data-m', MODE);
   var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   var STILL = root.classList.contains('still') || reduce;
@@ -30,8 +34,9 @@
   function hash(i, s) { var x = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return x - Math.floor(x); }
 
   var REVEAL_MOVING = false, CB = null, K = .6, OX = 0, OY = 0, W = 1, SH = 1, em = 16, M = 20, R = 100, bodies = [], words = [], built = false;
-  var q = 0, px = -1e4, py = -1e4, pvx = 0, pvy = 0, inside = false, lastT = 0, running = false, tPrev = 0;
+  var q = 0, px = -1e4, py = -1e4, pvx = 0, pvy = 0, inside = false, lastT = 0, running = false, tPrev = 0, clock = 0;
   var SPR = { w: 6.6, z: .42 }, SPA = { w: 7.4, z: .4 }, FR = 1.2;
+  var GL = 4.2, GA = 4.6, CR = { w: 4.2, z: 1 }, CA = { w: 4.6, z: 1 };   // black: glide friction, then a slow creep home
   var WID = [18, 44, 48, 92, 104, 111, 127, 144, 183];          // the brand's dash lengths, for the replies
 
   function mk(el, L, h, cx, cy, kind, k) {
@@ -65,7 +70,7 @@
     for (var u = 1; top - gap * u > em * .35; u++) replyRows.push({ y: top - gap * u + pitch * .1, x0: M + em * (u % 2 ? 1.4 : .2) + hash(u, 2) * em, row: -u });
     rows.forEach(function (r, i) { replyRows.push({ y: r.y, x0: r.x1 + em * .55, row: i, after: true }); });
     for (var v = 1; bot + gap * v < SH - em * .25; v++) replyRows.push({ y: bot + gap * v - pitch * .1, x0: M + em * (v % 2 ? 2.6 : .9) + hash(v, 8) * em, row: rows.length + v });
-    if (MODE === 6) replyRows = [];
+    if (MODE === 6 || MODE === 8) replyRows = [];
     replyRows.forEach(function (rr, ri) {
       var x = rr.x0, hh = rr.after ? h * .78 : h * .46;
       while (x < W - M - 10) {
@@ -114,6 +119,35 @@
         }
       });
     }
+    if (MODE === 8) {          // the whole screen is one black wall of lines, edge to edge. No gaps: each block carries its
+      // own dark groove (top edge, and the right edge where a line ends), so at rest it is solid black, nothing shows through
+      var pd = sig, rg = Math.max(3, em * .035), rows8 = Math.max(6, Math.round(SH / (em * .38))), p8 = SH / rows8, nb = 0;
+      layer.style.setProperty('--sg', rg.toFixed(1) + 'px');
+      var block = function (x, L, y, cl, join) {
+        var i = document.createElement('i'); i.className = cl + ' f' + (join ? '' : ' e'); i.style.width = (L + 1) + 'px'; i.style.height = (p8 + 1) + 'px'; layer.appendChild(i);
+        var fb = mk(i, L, p8, x + L / 2, y, 'field', 500 + nb); fb.blk = true; fb.fr = 0; fb.row = 2000 + nb;
+        fb.side = fb.hx < W / 2 ? -1 : 1; fb.jit = (hash(nb, 44) - .5) * 1.1;
+        fb.a0 = .015 + Math.abs(fb.hx - W / 2) / W * .12 + hash(nb, 45) * .05; fb.a1 = fb.a0 + .2;   // the wall parts from the centre
+        bodies.push(fb); nb++;
+      };
+      var fill = function (xa, xb, y) {                // long lines of two to seven blocks, joined without a seam
+        var x = xa;
+        while (x < xb - em * .12) {
+          var nk = 2 + Math.floor(hash(nb, 46) * 6);
+          for (var c = 0; c < nk && x < xb - em * .12; c++) {
+            var L = em * (.7 + hash(nb, 47) * .8); if (x + L > xb - em * .3) L = xb - x;
+            block(x, L, y, 'k', c < nk - 1 && x + L < xb - 1); x += L;
+          }
+        }
+      };
+      for (var r8 = 0; r8 < rows8; r8++) {
+        var yc = r8 * p8 + p8 / 2, xs = -hash(r8, 48) * em * .9;
+        if (pd && Math.abs(pd.hy - yc) <= p8 / 2) {     // the full stop's row: one Signal square stands over the full stop
+          var cs = p8 - rg, cx0 = pd.hx - cs / 2;
+          fill(xs, cx0, yc); block(cx0, cs + rg, yc, 'c', false); fill(cx0 + cs + rg, W + em, yc);
+        } else fill(xs, W + em, yc);
+      }
+    }
     bodies.forEach(function (l) { l.x = l.hx; l.y = l.hy; l.a = 0; l.vx = l.vy = l.va = 0; l.tf = ''; });
     built = true;
   }
@@ -124,7 +158,8 @@
       var e = sm((Q - l.a0) / (l.a1 - l.a0)), far = l.side > 0 ? W - l.hx + l.L : -(l.hx + l.L);
       return [far * e, 0, 0, 1];
     }
-    var ua = Math.max(sm((Q - l.a0) / (l.a1 - l.a0)), MODE === 7 ? sm(l.rv || 0) : 0), ub = sm((Q - l.b0) / (l.b1 - l.b0));
+    // (black: the statement's lines wait off the right edge from the start; the wall covers the words instead)
+    var ua = MODE === 8 ? 1 : Math.max(sm((Q - l.a0) / (l.a1 - l.a0)), MODE === 7 ? sm(l.rv || 0) : 0), ub = sm((Q - l.b0) / (l.b1 - l.b0));
     // A: slide along the row to the column it will stand in. B: tip up into the bar, leaning, at the final size
     var off = W + l.L * .6 + 30;                               // A: the line leaves its word and the frame, to the right
     var x = l.hx + (off - l.hx) * ua + (l.sx - off) * ub, y = l.hy + (l.sy - l.hy) * ub, k = 1 + (K - 1) * ub;
@@ -164,16 +199,33 @@
           tx += -l.L / 2 + Math.cos(op) * l.L / 2 - 0; ty += Math.sin(op) * l.L / 2; ta += op;
         }
       }
-      var sx = kL * (tx - l.x) - (cL + FR) * l.vx, sy = kL * (ty - l.y) - (cL + FR) * l.vy, sa = kA * (ta - l.a) - cA * l.va;
+      var sx, sy, sa;
+      if (l.blk && l.fr > clock && q < .01) { sx = -GL * l.vx; sy = -GL * l.vy; sa = -GA * l.va; }        // startled: glide to a stop and wait
+      else if (l.blk && q < .01) {                                                            // then creep home, no overshoot
+        sx = CR.w * CR.w * (tx - l.x) - 2 * CR.z * CR.w * l.vx; sy = CR.w * CR.w * (ty - l.y) - 2 * CR.z * CR.w * l.vy;
+        sa = CA.w * CA.w * (ta - l.a) - 2 * CA.z * CA.w * l.va;
+      } else { sx = kL * (tx - l.x) - (cL + FR) * l.vx; sy = kL * (ty - l.y) - (cL + FR) * l.vy; sa = kA * (ta - l.a) - cA * l.va; }
       var Fx = 0, Fy = 0, tq = 0;
       // forces from the hand: m1 pushes at the nearest point (slide and turn); m4 pushes along the row only
-      if (inside && !away && (MODE === 1 || MODE === 6)) {
+      if (inside && !away && (MODE === 1 || MODE === 6 || l.blk)) {
         var ux = Math.cos(l.a), uy = Math.sin(l.a), dx = px - l.x, dy = py - l.y;
         var t = clamp(dx * ux + dy * uy, -l.L / 2, l.L / 2), cx = l.x + ux * t, cy = l.y + uy * t;
         var ex = cx - px, ey = cy - py, dc = Math.sqrt(ex * ex + ey * ey) || 1, d = dc - l.h / 2;
         if (d < R) {
           var g = 1 - Math.max(d, 0) / R, push = (16000 * g * g + 260 * spd * g) * em / 80 * (l.kind === 'rep' ? .6 : 1) * (MODE === 6 ? 1.3 : 1);
+          if (l.blk) {                       // each block darts off a little sideways of straight away, then waits
+            var cj = Math.cos(l.jit), sj = Math.sin(l.jit), ex2 = ex * cj - ey * sj; ey = ex * sj + ey * cj; ex = ex2;
+            if (g > .12) {
+              if (l.fr <= clock) {             // the startle: a quick hand scares it further than a slow one
+                var kick0 = Math.min(900, (420 + 18 * spd) * g) * em / 126 / Math.sqrt(l.m);
+                l.vx += ex / dc * kick0; l.vy += ey / dc * kick0;
+              }
+              l.fr = Math.max(l.fr, clock + .65 + hash(l.k, 41) * .9);
+            }
+          }
+          if (l.blk) push *= .22;              // after the startle only a faint push: they dart once, they are not ploughed
           Fx = ex / dc * push; Fy = ey / dc * push; tq = (cx - l.x) * Fy - (cy - l.y) * Fx;
+          if (l.blk) tq *= .35;                // blocks turn a little as they go, never spin
         }
       }
       l.vx += (sx + Fx / l.m) * dt; l.vy += (sy + Fy / l.m) * dt; l.va += (sa + tq / l.I) * dt;
@@ -190,8 +242,14 @@
     }
     for (i = 0; i < bodies.length; i++) {
       l = bodies[i]; l.x += l.vx * dt; l.y += l.vy * dt; l.a += l.va * dt;
-      if (q < .02) { var lo = l.L / 2 * .3; if (l.x < lo) { l.x = lo; l.vx = Math.abs(l.vx) * .45; } if (l.x > W - lo) { l.x = W - lo; l.vx = -Math.abs(l.vx) * .45; }
-        if (l.y < 0) { l.y = 0; l.vy = Math.abs(l.vy) * .45; } if (l.y > SH) { l.y = SH; l.vy = -Math.abs(l.vy) * .45; } }
+      if (l.blk && q < .01 && l.fr <= clock) {   // home again: land exactly, so not a hairline of tan shows in the wall
+        var Th = exitPose(l, q), hx = l.hx + Th[0], hy = l.hy + Th[1];
+        if (Math.abs(hx - l.x) < .7 && Math.abs(hy - l.y) < .7 && Math.abs(Th[2] - l.a) < .003 && Math.abs(l.vx) + Math.abs(l.vy) < 30) { l.x = hx; l.y = hy; l.a = Th[2]; l.vx = l.vy = l.va = 0; }
+      }
+      if (q < .02 && MODE !== 8) { var lo = l.L / 2 * .3; if (l.x < lo) { l.x = lo; l.vx = Math.abs(l.vx) * .45; } if (l.x > W - lo) { l.x = W - lo; l.vx = -Math.abs(l.vx) * .45; }
+        // a clear break under the logo: a line never reaches the top edge of the stage, however it is turned
+        var top = Math.abs(Math.sin(l.a)) * l.L / 2 + Math.abs(Math.cos(l.a)) * l.h / 2 + em * .3;
+        if (l.y < top) { l.y = top; l.vy = Math.abs(l.vy) * .45; } if (l.y > SH) { l.y = SH; l.vy = -Math.abs(l.vy) * .45; } }
       if (Math.abs(l.vx) + Math.abs(l.vy) > 1.5 || Math.abs(l.va) > .02) moving = true;
     }
     return moving;
@@ -204,6 +262,10 @@
       if (tf !== l.tf) { l.el.style.transform = tf; l.tf = tf; }
     }
     if (CB) { var met = q > .78; if (met !== CB.met) { CB.met = met; CB.el.className = met ? 'c' : 'k'; } }
+    if (MODE === 8) {                    // the nav goes back to tan as the wall parts (fades only after the first paint)
+      var dk = q < .1; if (dk !== H.dk) { H.dk = dk; H.classList.toggle('dk', dk); }
+      if (!H.dkr) { H.dkr = true; setTimeout(function () { H.classList.add('dkr'); }, 120); }
+    }
     var ts = textScale(q); hl.style.transform = 'translateY(-50%) scale(' + ts.toFixed(4) + ')';
     for (var k = 0; k < words.length; k++) clipWord(words[k]);
   }
@@ -221,7 +283,7 @@
     var drift = Math.sin(Math.PI * Math.min(1, ua * 1.15)) * em * .09 * (1 - ua * .4);
     var dtf = drift > .1 ? 'translateX(' + drift.toFixed(2) + 'px)' : '';
     if (dtf !== w.tf) { w.tx.style.transform = dtf; w.tf = dtf; }
-    if (q > .3 || (MODE === 7 && (l.rv || 0) > .97)) { if (w.clip !== 'none') { w.tx.style.clipPath = 'none'; w.clip = 'none'; } return; }
+    if (MODE === 8 || q > .3 || (MODE === 7 && (l.rv || 0) > .97)) { if (w.clip !== 'none') { w.tx.style.clipPath = 'none'; w.clip = 'none'; } return; }
     var off = Math.hypot(l.x - l.hx, l.y - l.hy) + Math.abs(l.a) * l.L * .5, near = Math.max(0, 1 - off / (em * .9));
     var hh = l.h / 2 + w.pad * near, c = Math.cos(l.a), s = Math.sin(l.a), hw = l.L / 2 + 1;
     var pts = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(function (p) {
@@ -235,7 +297,7 @@
   function tick(now) {
     var dtAll = tPrev ? Math.min((now - tPrev) / 1000, 1 / 20) : 1 / 60; tPrev = now;
     q = progress(); pvx *= Math.pow(.02, dtAll); pvy *= Math.pow(.02, dtAll);
-    var n = Math.max(1, Math.ceil(dtAll / (1 / 240))), dt = dtAll / n, moving = false;
+    var n = Math.max(1, Math.ceil(dtAll / (1 / 240))), dt = dtAll / n, moving = false; clock += dtAll;
     REVEAL_MOVING = false;
     for (var i = 0; i < n; i++) moving = step(dt) || moving;
     if (REVEAL_MOVING) moving = true;
@@ -253,13 +315,33 @@
   }
   stage.addEventListener('pointermove', function (e) { if (e.pointerType !== 'touch') point(e.clientX, e.clientY); });
   stage.addEventListener('pointerleave', function () { inside = false; lastT = 0; kick(); });
+  // black: a click (or a tap) splits the wall open from that point. Every line slides along its own row, away from the
+  // click, the rows nearest it furthest, so the statement opens like an eye; a few seconds later the lines slide back
+  stage.addEventListener('pointerdown', function (e) {
+    if (MODE !== 8 || !built || q > .02) return;
+    var b = hb.getBoundingClientRect(), cx = e.clientX - b.left, cy = e.clientY - b.top;
+    for (var i = 0; i < bodies.length; i++) {
+      var l = bodies[i]; if (!l.blk) continue;
+      var dx = l.hx - cx, dy = l.hy - cy, f = Math.exp(-Math.abs(dy) / (SH * .34)) * (.35 + .65 * Math.exp(-Math.abs(dx) / (W * .45)));
+      var v = 2600 * f * (.85 + hash(l.k, 49) * .3) * em / 126;
+      l.vx += (dx < 0 ? -1 : 1) * v; l.va += (hash(l.k, 50) - .5) * .25 * f;
+      l.fr = clock + 2.2 + Math.abs(dy) / SH * .8 + hash(l.k, 51) * .3;
+    }
+    kick();
+  });
   addEventListener('scroll', kick, { passive: true });
 
   function settle(Q) { q = Q; bodies.forEach(function (l) { var T = exitPose(l, Q); l.x = l.hx + T[0]; l.y = l.hy + T[1]; l.a = T[2]; l.k = T[3]; }); render(); }
   var rt;
   function setup() {
-    var narrow = innerWidth < 900 || innerWidth / innerHeight < 1.1;
+    // black holds at narrower, taller windows too (a wall needs no room beside the words); phones keep the plain statement
+    var narrow = MODE === 8 ? innerWidth < 600 : innerWidth < 900 || innerWidth / innerHeight < 1.1;
     H.classList.toggle('ln-off', narrow);
+    if (MODE === 8) {                    // black: the light logo sits over the dark one and takes over while the wall is up
+      var lg = H.querySelector('.nav .logo'), im = lg && lg.querySelector('img');
+      if (im && !lg.querySelector('.lt')) { var lt = im.cloneNode(); lt.src = im.getAttribute('src').replace('dark', 'light'); lt.className = 'lt'; lt.alt = ''; lg.appendChild(lt); }
+      if (narrow) { H.dk = false; H.classList.remove('dk'); }
+    }
     if (narrow) { layer.textContent = ''; bodies = []; built = false; return; }
     measure(); H.classList.add('ln-on');
     if (STILL) { settle(1); return; }

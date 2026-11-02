@@ -3,17 +3,19 @@
    Conceal: the statement sits under one solid Ink line per word, the full stop under the one Signal square; the
    replies in Draft carry each row on to the margin and fill the pauses between the rows, so it reads as one block.
    Respond: every line hangs on a hinge at its left end. The hand lifts the nearest lines a few degrees on a spring.
-   A line hides only what it covers: at rest it hides its whole word, and the moment it moves the word shows around
-   it (no hidden box bigger than the line, Piyush 2 Nov: "a big white shadow behind every bar").
+   A line hides only what it covers: at rest it hides its whole word, and the moment it moves (a lift of a couple of
+   pixels) the word shows all round it (Piyush 2 Nov: no "white shadow" or "cream shadow" hiding the text).
    Reveal: with no scroll and no hand (after a short hold, or at once on the first scroll, tap or key), the replies
    fold back into their hinges, then the statement's lines glide off their words along their own rows in reading
    order, so the sentence is read as it appears (a line only ever passes over words still hidden), and settle beside
    the statement as one flat line on its centre line: the first word furthest out, the full stop's Signal nearest.
    Resolve, on scroll (Piyush 2 Nov: "this should happen on scroll"): the hero holds while the flat line rises into
    the waveform, bar by bar from the Signal outward, every bar upright at every point of the scroll; scrolling back
-   lays it flat again. The bars answer the hand a little, like a level. Nothing leaves the frame.
+   lays it flat again. Once it stands, a slow wave keeps running through the bars (Piyush 2 Nov: "after it settles
+   there should be looping wave movement"), only while the hero is on screen; the bars also answer the hand a
+   little, like a level. Nothing leaves the frame.
    Phones and portrait screens: the lines fold off their words, the flat line draws in under the statement, and the
-   scroll raises it. Reduced motion and ?still: the final composition, no hold. Drawn on one canvas; the words are
+   scroll raises it. Reduced motion and ?still: the final composition, no hold, no wave. Drawn on one canvas; the words are
    clipped in the DOM. Review: ?tau=1.4 holds a moment of the reveal, &w=.5 a point of the rise; ?hold=N. */
 (function () {
   var H = document.querySelector('.hero4.h16'); if (!H) return;
@@ -45,6 +47,7 @@
   var B = 2, P = 6, TF = 2, END = 0, built = false;
   var t0 = 0, revealAt = 0, tR = -1, speed = 1, px = -1e4, py = -1e4, inside = false, running = false, tPrev = 0, done = false;
   var w = 0;                                   // the rise: 0 a flat line, 1 the waveform
+  var lt = 0, la = 0;                          // the wave once the bars stand: its clock, and its strength (0 to 1)
 
   function measure() {
     var b = hb.getBoundingClientRect();
@@ -124,6 +127,9 @@
     if (tau < arrive) return null;
     var grow = beside ? 1 : eio((tau - l.c) / .38), N = lines.length, dk = l.k * .045, wk = clamp((w - dk) / (1 - (N - 1) * .045), 0, 1);
     var hlen = (P + (B - P) * ss(wk / .22)) * grow, vlen = TF + (l.H - TF) * ss((wk - .08) / .92);   // breaks into dashes, then rises
+    // once it stands, the waveform keeps speaking: a slow wave runs through the bars from the Signal outward, two
+    // swells over each other so it never reads as a metronome; every bar stays upright and on its centre line
+    if (la > 0) vlen *= 1 + la * wk * .15 * (.62 * Math.sin(lt * 2.4 - l.k * .78) + .38 * Math.sin(lt * 3.7 + l.k * 1.3));
     var e = l.g - 1;                                     // the hand: a small rise near it, a little more on a bar
     vlen += e * (1 - wk) * em * 2.6 + vlen * e * wk;
     return { cx: beside || grow >= 1 ? l.sx : l.sx - P / 2 + hlen / 2, cy: l.sy, a: 0, len: hlen, th: vlen, bar: true };
@@ -191,7 +197,8 @@
     var css;
     if (o.bar || o.gone || (!o.rest && o.xl >= l.tl + l.tw)) css = 'none';
     else {
-      var near = Math.max(0, 1 - (o.moved || 0) / (em * .3)); near = near * near * (3 - 2 * near);
+      // a couple of pixels of movement is enough: a lifted line never leaves a pale band hiding the letters under it
+      var near = Math.max(0, 1 - (o.moved || 0) / Math.max(2, em * .025)); near = near * near * (3 - 2 * near);
       var hh = o.th / 2 + l.pad * near, c = Math.cos(o.a), s = Math.sin(o.a), hw = o.len / 2 + .5;
       var pts = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(function (p) {
         return (o.cx + p[0] * c - p[1] * s - l.tl).toFixed(1) + 'px ' + (o.cy + p[0] * s + p[1] * c - l.tt).toFixed(1) + 'px';
@@ -247,6 +254,10 @@
       var wT = tau >= END ? ss(progress() / .78) : 0;
       w += (wT - w) * (1 - Math.exp(-dt * 14)); if (Math.abs(wT - w) < .0005) w = wT; else moving = true;
     }
+    // the wave runs only while the waveform stands and the hero is on screen, easing in and out
+    var seen = H.getBoundingClientRect().bottom > 0, laT = (!STILL && w > .97 && seen) ? 1 : 0;
+    la += (laT - la) * (1 - Math.exp(-dt * 2.2)); if (Math.abs(laT - la) < .002 || !seen) la = laT;
+    if (la > 0 || laT > 0) { lt += dt; moving = true; }
     draw(tau, intro, w);
     if (tau >= END !== done) { done = tau >= END; H.classList.toggle('said', done); }
     var busy = moving || intro < 1 || (!SR && (tR < 0 || tau < END + .1));
@@ -271,7 +282,8 @@
   var rt;
   function setup(first) {
     measure(); H.classList.add('ln-on');
-    window.__h16 = { end: END, draw: function (t, wv) { draw(t, 9, wv || 0); } };
+    window.__h16 = { end: END, draw: function (t, wv, loop) { la = loop == null ? 0 : 1; lt = loop || 0; draw(t, 9, wv || 0); },
+      state: function () { return { w: w, la: la, lt: lt, running: running, done: done }; } };
     if (TAU !== null) { draw(TAU, 9, WQ); return; }
     if (STILL) { t0 = performance.now() - 5000; finish(); w = 1; draw(END + 1, 9, 1); return; }
     if (SR) { if (first) t0 = performance.now(); sp = progress(); draw(sp / .48 * END, first ? 0 : 9, ss((sp - .5) / .36)); kick(); return; }

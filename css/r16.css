@@ -4,7 +4,8 @@
    style for the whole site. */
 
 /* ------------------------------------------------------------------ the hero (js/hero16.js)
-   The statement about 25% over round 12's (94px at 1440 wide), no longer growing on big screens. Thin lines, the
+   The statement about 25% over round 12's (94px at 1440 wide, 113px at 1728), stopping at 116px on big screens:
+   between round 12 (101px at 1920, "too small") and round 15 (133px at 1920, "too big"). Thin lines, the
    replies close in around them, the waveform beside the statement on its centre line. */
 /* the headline reveals on its own; the hero then holds for a stretch of scroll while the flat line rises into the
    waveform (Piyush, 2 Nov: "this should happen on scroll"), and lets go */
@@ -14,7 +15,7 @@
 .h16 .stick{position:sticky;top:0;height:100vh;height:100svh;min-height:560px}
 .h16 .stage{overflow:clip}
 .h16 .hb{position:absolute;inset:0;top:0;transform:none;line-height:1.1;
-  font-size:min(calc((100vw - 2 * var(--m)) / 14), calc((100vh - 170px) / 5.4), 104px)}
+  font-size:min(calc((100vw - 2 * var(--m)) / 14), calc((100vh - 170px) / 5.4), 116px)}
 .h16 .hl{--t:.24em;position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);padding:0 var(--m);white-space:nowrap;
   font-weight:300;letter-spacing:-.026em;will-change:auto}
 .h16 .hl br.m{display:none}

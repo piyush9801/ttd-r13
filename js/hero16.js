@@ -35,7 +35,8 @@
   var HOLD = qs.has('hold') ? parseFloat(qs.get('hold')) : 1.5;   // seconds the lines hold before the reveal
   var TAU = qs.has('tau') ? parseFloat(qs.get('tau')) : null, WQ = qs.has('w') ? parseFloat(qs.get('w')) : 0;
   // to compare: ?reveal=scroll puts the whole sequence on the scroll, the reveal too (no hold, nothing on its own)
-  var SR = qs.get('reveal') === 'scroll', sp = 0;
+  // the "everything on scroll" option is also built as its own page (the hero carries the class on-scroll)
+  var SR = qs.get('reveal') === 'scroll' || H.classList.contains('on-scroll'), sp = 0;
   if (SR) H.classList.add('on-scroll');
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }

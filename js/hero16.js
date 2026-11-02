@@ -1,17 +1,20 @@
 /* The Talent Dept. · round 16 hero (2 Nov 2026). Hinge, refined to Lisa's 2 Nov brief: Conceal, Respond, Reveal,
-   Resolve, smaller and denser than round 15 (the statement about 30% over round 12's, thin lines, no gaps).
+   Resolve, smaller and denser than round 15 (the statement about 25% over round 12's, thin lines, no gaps).
    Conceal: the statement sits under one solid Ink line per word, the full stop under the one Signal square; the
    replies in Draft carry each row on to the margin and fill the pauses between the rows, so it reads as one block.
-   Respond: every line hangs on a hinge at its left end. The hand lifts the nearest lines a few degrees on a spring
-   and the word shows at their edges. No line turns far enough to reach another row.
+   Respond: every line hangs on a hinge at its left end. The hand lifts the nearest lines a few degrees on a spring.
+   A line hides only what it covers: at rest it hides its whole word, and the moment it moves the word shows around
+   it (no hidden box bigger than the line, Piyush 2 Nov: "a big white shadow behind every bar").
    Reveal: with no scroll and no hand (after a short hold, or at once on the first scroll, tap or key), the replies
    fold back into their hinges, then the statement's lines glide off their words along their own rows in reading
-   order, so the sentence is read as it appears. A line only ever passes over words that are still hidden.
-   Resolve: past the statement each line turns upright and rises into one bar of the waveform beside it, all on the
-   statement's centre line: the first word furthest out, the full stop's Signal last and nearest. Every bar stands
-   at 90 degrees, inside the frame; nothing leaves it. Afterwards the bars answer the hand a little, like a level.
-   Phones and portrait screens: the lines fold off their words and the waveform rises under the statement.
-   Reduced motion and ?still: the final composition. Drawn on one canvas; the words are clipped in the DOM. */
+   order, so the sentence is read as it appears (a line only ever passes over words still hidden), and settle beside
+   the statement as one flat line on its centre line: the first word furthest out, the full stop's Signal nearest.
+   Resolve, on scroll (Piyush 2 Nov: "this should happen on scroll"): the hero holds while the flat line rises into
+   the waveform, bar by bar from the Signal outward, every bar upright at every point of the scroll; scrolling back
+   lays it flat again. The bars answer the hand a little, like a level. Nothing leaves the frame.
+   Phones and portrait screens: the lines fold off their words, the flat line draws in under the statement, and the
+   scroll raises it. Reduced motion and ?still: the final composition, no hold. Drawn on one canvas; the words are
+   clipped in the DOM. Review: ?tau=1.4 holds a moment of the reveal, &w=.5 a point of the rise; ?hold=N. */
 (function () {
   var H = document.querySelector('.hero4.h16'); if (!H) return;
   var root = document.documentElement;
@@ -26,19 +29,22 @@
   // the waveform, left to right (the first bar is the Signal): a rise, a peak, a dip and a second peak, after the
   // rhythm on the studio wall
   var PROF = [.5, .72, .9, 1, .58, .95, .8, .6];
-  var q = new URLSearchParams(location.search);
-  var HOLD = q.has('hold') ? parseFloat(q.get('hold')) : 1.5;   // seconds the lines hold before the reveal
-  var TAU = q.has('tau') ? parseFloat(q.get('tau')) : null;      // review: ?tau=1.4 holds the moment 1.4 s into the reveal
+  var qs = new URLSearchParams(location.search);
+  var HOLD = qs.has('hold') ? parseFloat(qs.get('hold')) : 1.5;   // seconds the lines hold before the reveal
+  var TAU = qs.has('tau') ? parseFloat(qs.get('tau')) : null, WQ = qs.has('w') ? parseFloat(qs.get('w')) : 0;
+  // to compare: ?reveal=scroll puts the whole sequence on the scroll, the reveal too (no hold, nothing on its own)
+  var SR = qs.get('reveal') === 'scroll', sp = 0;
+  if (SR) H.classList.add('on-scroll');
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function ss(t) { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }
   function eio(t) { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-  function back(t, s) { t = clamp(t, 0, 1); var u = t - 1; return 1 + (s + 1) * u * u * u + s * u * u; }
   function hash(i, s) { var x = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return x - Math.floor(x); }
 
   var W = 1, SH = 1, em = 16, M = 20, dpr = 1, beside = true, lines = [], reps = [], rows = [], textR = 0, ym = 0;
-  var B = 2, P = 6, S = 8, END = 0, built = false;
-  var t0 = 0, revealAt = 0, tR = -1, px = -1e4, py = -1e4, inside = false, running = false, tPrev = 0, done = false;
+  var B = 2, P = 6, TF = 2, END = 0, built = false;
+  var t0 = 0, revealAt = 0, tR = -1, speed = 1, px = -1e4, py = -1e4, inside = false, running = false, tPrev = 0, done = false;
+  var w = 0;                                   // the rise: 0 a flat line, 1 the waveform
 
   function measure() {
     var b = hb.getBoundingClientRect();
@@ -67,12 +73,12 @@
     });
     rows.sort(function (a, c) { return a.y - c.y; });
     textR = Math.max.apply(null, rows.map(function (r) { return r.x1; }));
-    var last = rows[rows.length - 1];
-    // the waveform: slim bars, close together, on the statement's centre line (beside), or under it (below)
-    var N = lines.length;
-    B = em * .15; P = em * .36; S = em * .42;
+    var last = rows[rows.length - 1], N = lines.length;
+    // the waveform: slim bars, close together, on the statement's centre line (beside), or under it (below). Laid
+    // flat, its segments meet end to end as one line
+    B = em * .15; P = em * .36; TF = em * .1;
     var HMAX = beside ? em * 2.72 : em * 2.3, wide = (N - 1) * P + B;
-    var x0w = beside ? Math.max(textR + em, textR + (W - M - textR - wide) / 2) : M;
+    var x0w = beside ? Math.max(textR + em, textR + (W - M - textR - wide) / 2) : M + P / 2 - B / 2;
     ym = beside ? (rows[0].y + last.y) / 2 : last.y + em * 1.25 + HMAX / 2;
     lines.forEach(function (l, j) {
       var k = N - 1 - j; l.k = k; l.sx = x0w + B / 2 + k * P; l.sy = ym; l.H = HMAX * PROF[k % PROF.length];
@@ -95,38 +101,41 @@
     built = true;
   }
 
-  // the pose a line takes on its way, at time tau after the reveal began. Beside: glide along the row, then in the
-  // clear space turn upright and rise into its bar. Below: fold toward the end of its word, then the bar rises.
+  // the reveal, at time tau after it began. Beside: a line glides along its row and, past the statement, down or up
+  // to the centre line, shortening to one segment of the flat line. Below: it folds toward the end of its word
   function glide(l, tau) {
     var u = (tau - l.s) / l.D;
     if (u <= 0) return null;
-    var p = eio(u), len, xl, y, a = 0, th;
+    var p = eio(u), len, xl;
     if (!beside) {
       len = l.L0 * (1 - p); xl = l.x0 + l.L0 * p;
-      return { cx: xl + len / 2, cy: l.hy, a: 0, len: len, th: l.T0, xl: xl, gone: p >= 1 };
+      return { cx: xl + len / 2, cy: l.hy, a: 0, len: len, th: l.T0, xl: xl, gone: p >= 1, moved: em };
     }
-    len = l.L0 + (S - l.L0) * ss(p / .8);
+    len = l.L0 + (P - l.L0) * ss(p / .8);
     var xc = l.hx + (l.sx - l.hx) * p; xl = xc - len / 2;
-    var span = l.sx - S / 2 - textR - em * .08, ey = ss((xl - textR - em * .08) / (span > 1 ? span : 1));
-    y = l.hy + (l.sy - l.hy) * ey;
-    a = -Math.PI / 2 * ss((ey - .2) / .8);          // past the statement it turns upright as it glides to its place
-    th = l.T0 + (B - l.T0) * ss((p - .25) / .5);
-    return { cx: xc, cy: y, a: a, len: len, th: th, xl: xl };
+    var span = l.sx - P / 2 - textR - em * .08, ey = ss((xl - textR - em * .08) / (span > 1 ? span : 1));
+    return { cx: xc, cy: l.hy + (l.sy - l.hy) * ey, a: 0, len: len, th: l.T0 + (TF - l.T0) * ss((p - .25) / .5), xl: xl,
+      moved: Math.abs(xc - l.hx) + (l.L0 - len) / 2 };
   }
-  function stand(l, tau) {
-    var u = (tau - l.c) / .62;
-    if (u <= 0) return null;
-    var s0 = beside ? S : 0;
-    return { cx: l.sx, cy: l.sy, a: -Math.PI / 2, len: s0 + (l.H - s0) * back(u, 1.15), th: B };
+  // after the reveal: one segment of the flat line, risen by w into its bar. Every bar stays upright at every w: the
+  // segment narrows to a bar and grows up and down from the centre line, the Signal first, then outward
+  function seg(l, tau, w) {
+    var arrive = beside ? l.s + l.D : l.c;
+    if (tau < arrive) return null;
+    var grow = beside ? 1 : eio((tau - l.c) / .38), N = lines.length, dk = l.k * .045, wk = clamp((w - dk) / (1 - (N - 1) * .045), 0, 1);
+    var hlen = (P + (B - P) * ss(wk / .22)) * grow, vlen = TF + (l.H - TF) * ss((wk - .08) / .92);   // breaks into dashes, then rises
+    var e = l.g - 1;                                     // the hand: a small rise near it, a little more on a bar
+    vlen += e * (1 - wk) * em * 2.6 + vlen * e * wk;
+    return { cx: beside || grow >= 1 ? l.sx : l.sx - P / 2 + hlen / 2, cy: l.sy, a: 0, len: hlen, th: vlen, bar: true };
   }
   function schedule() {
     var N = lines.length, prev = null;
     lines.forEach(function (l, j) {
-      if (!beside) { l.D = .46; l.s = .25 + j * .1; l.c = l.s + l.D * .8; prev = l; return; }   // its bar rises as it folds away
+      if (!beside) { l.D = .46; l.s = .25 + j * .1; l.c = .25 + N * .1 + .25 + l.k * .07; prev = l; return; }   // the flat line draws in left to right
       l.D = .52 + .042 * Math.abs(l.sx - l.hx) / em;
       var s = j === 0 ? .22 : prev.s + .1;
       // a line may only pass over words still hidden: the line ahead of it on its row must stay ahead of its left
-      // end, and the bars must arrive in order (each lands nearer the statement than the one before)
+      // end, and the segments must arrive in order (each lands nearer the statement than the one before)
       for (var it = 0; it < 200; it++) {
         l.s = s; var ok = true;
         if (prev) {
@@ -140,22 +149,23 @@
         }
         if (ok) break; s += .02;
       }
-      l.c = l.s + l.D - .04; prev = l;
+      prev = l;
     });
-    END = Math.max.apply(null, lines.map(function (l) { return l.c + .7; }));
+    END = Math.max.apply(null, lines.map(function (l) { return beside ? l.s + l.D : l.c + .4; }));
   }
 
-  // where a line (or reply) is right now: rest with its hinge, gliding, or standing as a bar
-  function pose(l, tau) {
-    var st = tau >= 0 ? stand(l, tau) : null;
-    if (st) { st.bar = true; return st; }
+  // where a line is right now: resting on its hinge, gliding, or a segment of the line that rises on scroll
+  function pose(l, tau, w) {
+    var s = tau >= 0 ? seg(l, tau, w) : null;
+    if (s) return s;
     var g = tau >= 0 ? glide(l, tau) : null;
     if (g) return g;
     var a = l.ha, xl = l.x0;
-    return { cx: xl + Math.cos(a) * l.L0 / 2, cy: l.hy + Math.sin(a) * l.L0 / 2, a: a, len: l.L0, th: l.T0, xl: xl, rest: true };
+    return { cx: xl + Math.cos(a) * l.L0 / 2, cy: l.hy + Math.sin(a) * l.L0 / 2, a: a, len: l.L0, th: l.T0, xl: xl, rest: true,
+      moved: Math.abs(a) * l.L0 / 2 };
   }
 
-  function draw(tau, intro) {
+  function draw(tau, intro, wv) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, SH);
     ctx.fillStyle = DRAFT;
     for (var i = 0; i < reps.length; i++) {
@@ -163,26 +173,26 @@
       if (len < .5) continue;
       ctx.save(); ctx.translate(r.x0, r.hy); ctx.rotate(r.ha); ctx.fillRect(0, -r.T0 / 2, len, r.T0); ctx.restore();
     }
-    var order = lines.map(function (l) { var o = pose(l, tau); l.o = o; return l; });
+    var order = lines.map(function (l) { l.o = pose(l, tau, wv); return l; });
     order.sort(function (a, c) { return (a.o.rest ? 1 : 0) - (c.o.rest ? 1 : 0) || a.j - c.j; });
     for (var j = 0; j < order.length; j++) {
       var l = order[j], o = l.o;
-      if (o.gone || o.len < .5) { clip(l, o); continue; }
-      var len = o.len * (o.bar ? l.g : 1);
-      ctx.fillStyle = l.sig ? SIG : INK;
-      ctx.save(); ctx.translate(o.cx, o.cy); ctx.rotate(o.a); ctx.fillRect(-len / 2, -o.th / 2, len, o.th); ctx.restore();
       clip(l, o);
+      if (o.gone || o.len < .5) continue;
+      ctx.fillStyle = l.sig ? SIG : INK;
+      ctx.save(); ctx.translate(o.cx, o.cy); ctx.rotate(o.a); ctx.fillRect(-o.len / 2, -o.th / 2, o.len, o.th); ctx.restore();
     }
   }
 
-  // a word is hidden under its line: while the line rests or hinges, by the line's own (turned) rectangle stretched
-  // over the full height of the letters; once it glides, everything left of the line's trailing end shows
+  // a word is hidden under its own line. At rest the hidden area is the line stretched over the full height of the
+  // letters; the moment the line moves (a hinge, a glide) it shrinks to the line itself, so the word shows all round
+  // it and there is never a hidden box larger than the line
   function clip(l, o) {
     var css;
-    if (o.bar || o.gone || (o.xl != null && !o.rest && o.xl >= l.tl + l.tw)) css = 'none';
-    else if (!o.rest) css = 'inset(-.5em ' + Math.max(0, l.tl + l.tw - Math.max(o.xl, l.tl)).toFixed(1) + 'px -.5em -.5em)';
+    if (o.bar || o.gone || (!o.rest && o.xl >= l.tl + l.tw)) css = 'none';
     else {
-      var near = Math.max(0, 1 - Math.abs(o.a) * l.L0 * .5 / (em * .9)), hh = l.T0 / 2 + l.pad * near, c = Math.cos(o.a), s = Math.sin(o.a), hw = l.L0 / 2 + 1;
+      var near = Math.max(0, 1 - (o.moved || 0) / (em * .3)); near = near * near * (3 - 2 * near);
+      var hh = o.th / 2 + l.pad * near, c = Math.cos(o.a), s = Math.sin(o.a), hw = o.len / 2 + .5;
       var pts = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(function (p) {
         return (o.cx + p[0] * c - p[1] * s - l.tl).toFixed(1) + 'px ' + (o.cy + p[0] * s + p[1] * c - l.tt).toFixed(1) + 'px';
       });
@@ -191,48 +201,59 @@
     if (css !== l.clip) { l.tx.style.clipPath = css; l.clip = css; }
   }
 
-  // the hand: before the reveal it lifts lines on their hinges; afterwards the bars rise a little toward it
+  // the hand: before the reveal it lifts lines on their hinges; afterwards the line and its bars rise a little toward it
   function springs(dt, tau) {
-    var moving = false, i, l, w = 9, z = .62, k = w * w, c = 2 * z * w;
-    var pre = tau < 0 || tau < .3;
+    var moving = false, i, l, k = 81, c = 2 * .62 * 9;
+    var pre = tau < .3;
     function lift(b, L, cap, x0, y) {
       var tg = 0;
       if (pre && inside) {
         var dx = Math.max(x0 - px, 0, px - (x0 + L)), dy = py - y, d = Math.sqrt(dx * dx + dy * dy * 2.2), R = em * 1.15;
         var gg = Math.max(0, 1 - d / R); gg = gg * gg * (3 - 2 * gg);
-        tg = -Math.min(cap, em * .34 / L) * gg;
+        tg = -Math.min(cap, em * .3 / L) * gg;
       }
       b.hv += (k * (tg - b.ha) - c * b.hv) * dt; b.ha += b.hv * dt;
       if (Math.abs(b.hv) > .0005 || Math.abs(tg - b.ha) > .0005) moving = true;
     }
-    for (i = 0; i < lines.length; i++) { l = lines[i]; lift(l, l.L0, .1, l.x0, l.hy); }
-    for (i = 0; i < reps.length; i++) { var r = reps[i]; lift(r, r.L0, .07, r.x0, r.hy); }
-    if (tau >= END - .7) for (i = 0; i < lines.length; i++) {
+    for (i = 0; i < lines.length; i++) { l = lines[i]; lift(l, l.L0, .09, l.x0, l.hy); }
+    for (i = 0; i < reps.length; i++) { var r = reps[i]; lift(r, r.L0, .06, r.x0, r.hy); }
+    if (tau >= END) for (i = 0; i < lines.length; i++) {
       l = lines[i]; var tg2 = 1;
       if (inside && beside) {
-        var hx = Math.abs(px - l.sx), vy = Math.abs(py - l.sy) < l.H * .75 ? 1 : 0;
+        var hx = Math.abs(px - l.sx), vy = Math.abs(py - l.sy) < Math.max(l.H * .75, em * .8) ? 1 : 0;
         var g2 = Math.max(0, 1 - hx / (em * .85)); tg2 = 1 + .11 * g2 * g2 * (3 - 2 * g2) * vy;
       }
-      var w2 = 11, z2 = .42;
-      l.gv += (w2 * w2 * (tg2 - l.g) - 2 * z2 * w2 * l.gv) * dt; l.g += l.gv * dt;
+      l.gv += (121 * (tg2 - l.g) - 2 * .42 * 11 * l.gv) * dt; l.g += l.gv * dt;
       if (Math.abs(l.gv) > .0005 || Math.abs(tg2 - l.g) > .0005) moving = true;
     }
     return moving;
   }
 
+  // how far the hero's scroll has gone: 0 at the top, 1 when it lets go of the page
+  function progress() { var r = H.getBoundingClientRect(), span = H.offsetHeight - innerHeight; return span > 0 ? clamp(-r.top / span, 0, 1) : 1; }
+
   function tick(now) {
     var dt = tPrev ? Math.min((now - tPrev) / 1000, 1 / 20) : 1 / 60; tPrev = now;
-    if (tR < 0 && built && now >= revealAt) start(now);
-    var tau = tR < 0 ? -1 : (now - tR) / 1000, intro = (now - t0) / 1000;
-    var n = Math.max(1, Math.ceil(dt / (1 / 240))), moving = false;
+    if (!SR && tR < 0 && built && now >= revealAt) start(now);
+    var moving = false, tau, intro = (now - t0) / 1000;
+    if (SR) {                                  // the scroll is the clock: the first half reveals, the second raises
+      var pT = progress(); sp += (pT - sp) * (1 - Math.exp(-dt * 14)); if (Math.abs(pT - sp) < .0005) sp = pT; else moving = true;
+      tau = sp / .48 * END; w = ss((sp - .5) / .36);
+    } else tau = tR < 0 ? -1 : (now - tR) / 1000 * speed;
+    var n = Math.max(1, Math.ceil(dt / (1 / 240)));
     for (var i = 0; i < n; i++) moving = springs(dt / n, tau) || moving;
-    draw(tau, intro);
-    if (tau >= END && !done) { done = true; H.classList.add('said'); }
-    var busy = moving || tR < 0 || tau < END + .1 || intro < 1;
+    if (!SR) {
+      // the rise follows the scroll once the line is whole (a short follow, so a quick scroll still eases in)
+      var wT = tau >= END ? ss(progress() / .78) : 0;
+      w += (wT - w) * (1 - Math.exp(-dt * 14)); if (Math.abs(wT - w) < .0005) w = wT; else moving = true;
+    }
+    draw(tau, intro, w);
+    if (tau >= END !== done) { done = tau >= END; H.classList.toggle('said', done); }
+    var busy = moving || intro < 1 || (!SR && (tR < 0 || tau < END + .1));
     if (busy) requestAnimationFrame(tick); else { running = false; tPrev = 0; }
   }
   function kick() { if (!running && built) { running = true; requestAnimationFrame(tick); } }
-  function start(now) { if (tR < 0) { tR = now || performance.now(); kick(); } }
+  function start(now, fast) { if (tR < 0) { tR = now || performance.now(); if (fast) speed = 1.5; kick(); } }
 
   stage.addEventListener('pointermove', function (e) {
     if (e.pointerType === 'touch') return;
@@ -242,23 +263,25 @@
     kick();
   });
   stage.addEventListener('pointerleave', function () { inside = false; kick(); });
-  stage.addEventListener('pointerdown', function () { start(); });
-  addEventListener('scroll', function () { if (scrollY > 2) start(); }, { passive: true });
-  addEventListener('keydown', function () { start(); });
+  stage.addEventListener('pointerdown', function () { if (!SR) start(); });
+  addEventListener('scroll', function () { if (!SR && scrollY > 2) start(0, true); kick(); }, { passive: true });
+  addEventListener('keydown', function () { if (!SR) start(); });
 
-  function finish() { tR = performance.now() - (END + 1) * 1000; done = true; H.classList.add('said'); lines.forEach(function (l) { l.g = 1; l.gv = 0; }); }
+  function finish() { tR = performance.now() - (END + 1) * 1000 / speed; done = true; H.classList.add('said'); lines.forEach(function (l) { l.g = 1; l.gv = 0; }); }
   var rt;
   function setup(first) {
     measure(); H.classList.add('ln-on');
-    window.__h16 = { end: END, draw: function (t) { draw(t, 9); } };
-    if (TAU !== null) { draw(TAU, 9); return; }
-    if (STILL || (first && scrollY > H.offsetHeight * .6)) { t0 = performance.now() - 5000; finish(); draw(END + 1, 9); return; }
-    if (!first && tR >= 0) {              // resized after the reveal: straight to where it was going
+    window.__h16 = { end: END, draw: function (t, wv) { draw(t, 9, wv || 0); } };
+    if (TAU !== null) { draw(TAU, 9, WQ); return; }
+    if (STILL) { t0 = performance.now() - 5000; finish(); w = 1; draw(END + 1, 9, 1); return; }
+    if (SR) { if (first) t0 = performance.now(); sp = progress(); draw(sp / .48 * END, first ? 0 : 9, ss((sp - .5) / .36)); kick(); return; }
+    if (first && scrollY > innerHeight * .5) { t0 = performance.now() - 5000; finish(); w = ss(progress() / .78); draw(END + 1, 9, w); kick(); return; }
+    if (!first && tR >= 0) {              // resized after the reveal began: straight to the whole line, the rise kept
       if (!done) finish();
-      t0 = performance.now() - 5000; draw((performance.now() - tR) / 1000, 9); kick(); return;
+      t0 = performance.now() - 5000; draw(END + 1, 9, w); kick(); return;
     }
     if (first) { t0 = performance.now(); revealAt = t0 + HOLD * 1000; }
-    draw(-1, first ? 0 : 9); kick();
+    draw(-1, first ? 0 : 9, 0); kick();
   }
   addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { setup(false); }, 150); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setup(true); }); else setup(true);

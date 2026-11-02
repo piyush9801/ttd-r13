@@ -6,8 +6,12 @@
 /* ------------------------------------------------------------------ the hero (js/hero16.js)
    The statement about 25% over round 12's (94px at 1440 wide), no longer growing on big screens. Thin lines, the
    replies close in around them, the waveform beside the statement on its centre line. */
-.hero4.h16,.js:not(.still) .hero4.h16{height:auto}
-.h16 .stick{position:relative;height:100vh;height:100svh;min-height:560px}
+/* the headline reveals on its own; the hero then holds for a stretch of scroll while the flat line rises into the
+   waveform (Piyush, 2 Nov: "this should happen on scroll"), and lets go */
+.hero4.h16{height:auto}
+.js:not(.still) .hero4.h16{height:calc(100vh + 90vh)}
+.js:not(.still) .hero4.h16.on-scroll{height:calc(100vh + 150vh)}      /* ?reveal=scroll: the reveal is on the scroll too */
+.h16 .stick{position:sticky;top:0;height:100vh;height:100svh;min-height:560px}
 .h16 .stage{overflow:clip}
 .h16 .hb{position:absolute;inset:0;top:0;transform:none;line-height:1.1;
   font-size:min(calc((100vw - 2 * var(--m)) / 14), calc((100vh - 170px) / 5.4), 104px)}
@@ -20,12 +24,17 @@
 .h16.ln-on .hl .dash{visibility:hidden}
 html:not(.js) .h16 .hl .dash{display:none}
 /* reduced motion: the lines are never shown, but the script still measures them to draw the final waveform */
-@media (prefers-reduced-motion:reduce){ .js .h16 .hl .dash{display:block;visibility:hidden} }
+@media (prefers-reduced-motion:reduce){
+  .js .h16 .hl .dash{display:block;visibility:hidden}
+  .js:not(.still) .hero4.h16{height:auto} .h16 .stick{position:relative}
+}
 /* if the script never runs, the statement still shows */
 @keyframes h16safe{to{clip-path:none}}
 .js .h16:not(.ln-on) .hl .tx{animation:h16safe 0s 4s forwards}
 /* phones and portrait screens: four lines, the waveform under them, the two centred together */
 @media (max-width:899px),(max-aspect-ratio:11/10){
+  .js:not(.still) .hero4.h16{height:calc(100svh + 70svh)}
+  .js:not(.still) .hero4.h16.on-scroll{height:calc(100svh + 120svh)}
   .h16 .hb{font-size:min(calc((100vw - 2 * var(--m)) / 7.6), calc((100svh - 150px) / 9.2))}
   .h16 .hl{top:calc(50% - 3.8em);transform:none}
   .h16 .hl br.m{display:inline}

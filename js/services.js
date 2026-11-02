@@ -1,16 +1,27 @@
 /* The Talent Dept. · v1 Rhythm · The Work. The seven services stand as the Rhythm: one bar each on one centre line,
    Talent Booking the Signal. The first time the section comes into view the bars build from their centre line,
    block by block, from the Signal bar outwards along the row, then everything is still. A bar (or its name) opens its
-   service below; arrow keys move along the row. Reduced motion: the bars simply stand. */
+   service below; arrow keys move along the row. Reduced motion: the bars simply stand.
+   Second version (html.v2, 30 Oct): every service shows at once, one under the other, and the bars are the index to
+   them: choosing a bar brings its service into view and marks it. */
 (function () {
   var rh = document.querySelector('.svc-rh'); if (!rh) return;
   var tabs = [].slice.call(rh.querySelectorAll('.sv')), panels = [].slice.call(document.querySelectorAll('.svp'));
+  var ALL = document.documentElement.classList.contains('v2');
   function pick(i, focus) {
     tabs.forEach(function (t, k) { var on = k === i; t.classList.toggle('on', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; });
     panels.forEach(function (p, k) { p.classList.toggle('on', k === i); });
     if (focus) tabs[i].focus();
   }
-  tabs.forEach(function (t, i) {
+  if (ALL) tabs.forEach(function (t, i) {
+    t.removeAttribute('role'); t.removeAttribute('aria-selected'); panels[i].removeAttribute('role');
+    t.addEventListener('click', function () {
+      tabs.forEach(function (u, k) { u.classList.toggle('on', k === i); }); panels.forEach(function (p, k) { p.classList.toggle('on', k === i); });
+      panels[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+  if (ALL) rh.removeAttribute('role');
+  if (!ALL) tabs.forEach(function (t, i) {
     t.tabIndex = i === 0 ? 0 : -1;
     t.addEventListener('click', function () { pick(i); });
     t.addEventListener('keydown', function (e) {
@@ -21,10 +32,10 @@
       if (j > -1) { e.preventDefault(); pick(j, true); }
     });
   });
-  document.documentElement.classList.add('svc-js');
+  if (!ALL) document.documentElement.classList.add('svc-js');
   // arriving from the home page's list (the-work.html#svp3): open that service and bring the row into view
   var m = /^#svp(\d)$/.exec(location.hash);
-  if (m && tabs[+m[1]]) {
+  if (m && tabs[+m[1]] && !ALL) {
     pick(+m[1]);
     var sec = rh.closest('section'), go = function () { if (sec) sec.scrollIntoView({ block: 'start' }); };
     go(); addEventListener('load', function () { setTimeout(go, 0); });   // after the browser's own jump to the panel

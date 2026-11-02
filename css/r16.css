@@ -1,0 +1,173 @@
+/* The Talent Dept. · round 16 (2 Nov 2026). Loaded last. Lisa's 2 Nov brief, read as one art-directed pass rather than a
+   list of edits: the Hinge hero smaller and denser with an upright waveform, Home's "We're just down the hall.", the
+   talent wall on The Work only, the team as the focal point of The Dept., an email-first Contact, and one call to action
+   style for the whole site. */
+
+/* ------------------------------------------------------------------ the hero (js/hero16.js)
+   The statement about 25% over round 12's (94px at 1440 wide), no longer growing on big screens. Thin lines, the
+   replies close in around them, the waveform beside the statement on its centre line. */
+.hero4.h16,.js:not(.still) .hero4.h16{height:auto}
+.h16 .stick{position:relative;height:100vh;height:100svh;min-height:560px}
+.h16 .stage{overflow:clip}
+.h16 .hb{position:absolute;inset:0;top:0;transform:none;line-height:1.1;
+  font-size:min(calc((100vw - 2 * var(--m)) / 14), calc((100vh - 170px) / 5.4), 104px)}
+.h16 .hl{--t:.24em;position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);padding:0 var(--m);white-space:nowrap;
+  font-weight:300;letter-spacing:-.026em;will-change:auto}
+.h16 .hl br.m{display:none}
+.h16 .hl .dash{top:calc(.64em - var(--t) / 2);height:var(--t)}
+.h16 .hl .pd .tx{min-width:0}
+.h16 .ln16{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.h16.ln-on .hl .dash{visibility:hidden}
+html:not(.js) .h16 .hl .dash{display:none}
+/* reduced motion: the lines are never shown, but the script still measures them to draw the final waveform */
+@media (prefers-reduced-motion:reduce){ .js .h16 .hl .dash{display:block;visibility:hidden} }
+/* if the script never runs, the statement still shows */
+@keyframes h16safe{to{clip-path:none}}
+.js .h16:not(.ln-on) .hl .tx{animation:h16safe 0s 4s forwards}
+/* phones and portrait screens: four lines, the waveform under them, the two centred together */
+@media (max-width:899px),(max-aspect-ratio:11/10){
+  .h16 .hb{font-size:min(calc((100vw - 2 * var(--m)) / 7.6), calc((100svh - 150px) / 9.2))}
+  .h16 .hl{top:calc(50% - 3.8em);transform:none}
+  .h16 .hl br.m{display:inline}
+  .h16 .hl br.d{display:none}
+}
+
+/* ------------------------------------------------------------------ one call to action (Lisa, 2 Nov: large type, no
+   buttons, a small directional graphic, one hover for the whole site). The words, then the brand's line ending in an
+   arrow. At rest a hairline under the words says "this goes somewhere"; on hover or focus the line draws in under them
+   and the arrow's line extends, the way the hero's lines glide on. */
+.go16{color:var(--ink);text-decoration:none;font-weight:300;letter-spacing:-.026em;line-height:1.08}
+.go16 .t{padding-bottom:.05em;-webkit-box-decoration-break:clone;box-decoration-break:clone;
+  background:linear-gradient(currentColor,currentColor) 0 100%/0 max(1px,.022em) no-repeat,
+             linear-gradient(var(--hair),var(--hair)) 0 100%/100% max(1px,.022em) no-repeat;
+  transition:background-size .6s cubic-bezier(.22,1,.36,1)}
+.go16 b{font-weight:500} .go16 i{color:var(--coral);font-style:normal;font-weight:inherit}
+.go16 .ar{display:inline-block;width:.82em;height:.36em;margin-left:.3em;vertical-align:.12em;overflow:visible;
+  fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:butt;stroke-linejoin:miter}
+.go16 .sh{transform-box:view-box;transform-origin:0 50%}
+.go16 .sh,.go16 .hd{transition:transform .6s cubic-bezier(.22,1,.36,1)}
+.go16:hover .t,.go16:focus-visible .t{background-size:100% max(1px,.022em),100% max(1px,.022em)}
+.go16:hover .sh,.go16:focus-visible .sh{transform:scaleX(1.34)}
+.go16:hover .hd,.go16:focus-visible .hd{transform:translateX(15px)}
+.go16:focus-visible{outline:1px solid currentColor;outline-offset:.25em}
+.go16.xl{font-size:clamp(42px,6.2vw,120px)} .go16.xl .ar{stroke-width:1.6}
+.go16.l{font-size:clamp(30px,3.1vw,58px)}
+.go16.m{font-size:clamp(20px,1.55vw,28px);font-weight:400;letter-spacing:-.008em} .go16.m .ar{stroke-width:2.6}
+.go16.ml{font-size:clamp(26px,3.1vw,58px);letter-spacing:-.02em}
+
+/* arrivals: headings still rise word by word; every photograph, the portraits too, only fades in where it stands */
+.rv-on .rv-o{opacity:0;transition:opacity 1.6s cubic-bezier(.4,0,.2,1)}
+.rv-on .rv-o.in{opacity:1}
+
+/* ------------------------------------------------------------------ Home */
+/* Not another booking company.: its link is gone (the one way into The Work is in What we do) */
+/* What we do: the seven services as a plain list (one link for the section, not eight) */
+.vb-s ul{display:grid;row-gap:.34em;align-content:start}
+.vb-s li{display:block}
+.vb-go{margin-top:clamp(28px,3vw,56px)}
+/* We're just down the hall.: the line across the page, the hallway as a wide band from edge to edge, the two sentences
+   under it, the way into The Dept. last */
+.hall{padding:20vh 0 18vh;overflow-x:clip}
+.hall-h{padding:0 var(--m);font-size:clamp(46px,7.4vw,144px);line-height:.96;letter-spacing:-.034em;font-weight:300;text-wrap:balance}
+.hall-h b{font-weight:500}
+.hall-f{margin:9vh 0 0;line-height:0}
+.hall-f img{display:block;width:100%;aspect-ratio:21/9;object-fit:cover;object-position:60% 40%;filter:grayscale(1)}
+.hall-t{padding:0 var(--m);margin-top:8vh;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);align-items:start}
+.hall-l{grid-column:1/7;font-size:clamp(22px,2.05vw,38px);line-height:1.24;letter-spacing:-.012em;font-weight:400;text-wrap:pretty}
+.hall-r{grid-column:8/13;padding-top:.35em}
+.hall-r p{font-size:clamp(17px,1.25vw,21px);line-height:1.5;color:var(--ink70);max-width:25em;text-wrap:pretty}
+.hall-r .go16{display:inline-block;margin-top:clamp(32px,5.4vh,64px)}
+@media (max-width:760px){
+  .hall{padding:110px 0 100px} .hall-h{font-size:12.6vw}
+  .hall-f{margin-top:40px} .hall-f img{aspect-ratio:4/3;object-position:60% 50%}
+  .hall-t{display:block;margin-top:34px} .hall-l{font-size:22px} .hall-r{margin-top:20px;padding-top:0}
+}
+
+/* ------------------------------------------------------------------ The Work */
+/* the seven services, all open: the name large, its description beside it on the same first line, open space between
+   them instead of rules */
+.svc16{padding:15vh var(--m) 17vh}
+.svc16 .sl{margin-top:8vh;display:grid;row-gap:clamp(56px,9vh,110px)}
+.svc16 .sl li{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);align-items:baseline;scroll-margin-top:16vh}
+.svc16 h3{grid-column:1/7;font-size:clamp(32px,3.6vw,68px);line-height:1.02;letter-spacing:-.026em;font-weight:300;text-wrap:balance}
+.svc16 .sl p{grid-column:7/12;font-size:clamp(18px,1.4vw,24px);line-height:1.38;text-wrap:pretty}
+@media (max-width:760px){
+  .svc16{padding:90px var(--m) 100px} .svc16 .sl{margin-top:30px;row-gap:44px} .svc16 .sl li{display:block}
+  .svc16 h3{font-size:9.6vw} .svc16 .sl p{margin-top:12px;font-size:18px}
+}
+/* the crew, a wide band between the services and the people */
+.wk-ph{margin:0;line-height:0}
+.wk-ph img{display:block;width:100%;aspect-ratio:21/9;object-fit:cover;filter:grayscale(1)}
+@media (max-width:760px){ .wk-ph img{aspect-ratio:4/3} }
+/* behind the conversation: the line that leads sits with the heading; the people, then the platforms they were booked
+   on. No dot, no lift, no swapped captions: a hand on a name lights its platform and the people booked there with it */
+.names2 .sw-hd{align-items:end}
+.names2 .sw-h{grid-column:1/8}
+.names2 .sw-l{grid-column:8/13;font-size:clamp(18px,1.4vw,24px);line-height:1.38;padding-bottom:.55em;text-wrap:pretty}
+.names2 .wall .ws{font-size:clamp(28px,3.5vw,66px);line-height:1.22;letter-spacing:-.024em}
+.wall .n{color:var(--ink);transition:color .35s ease}
+.wall .n:hover,.wall .n:focus-visible{transform:none;outline:none}
+.wall .n:hover::after,.wall .n:focus-visible::after{content:none}
+.wall .sep{margin:0 .02em 0 .22em;color:var(--draft)}     /* with the space after it: the same air on both sides */
+.wall .pf{margin-top:9vh;padding-top:2.6vh;border-top:1px solid var(--hair);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:var(--g);row-gap:.75em}
+.wall .pf li{font-size:clamp(15px,1.08vw,19px);line-height:1.35;color:var(--ink70);cursor:default;transition:color .35s ease;outline:none}
+.wall:has(.n:hover,.n:focus-visible,.pf li:hover,.pf li:focus-visible) .n{color:#ADA08A}
+.wall:has(.n:hover,.n:focus-visible,.pf li:hover,.pf li:focus-visible) .pf li{color:#ADA08A}
+.wall .pf li:focus-visible{text-decoration:underline;text-underline-offset:.2em}
+@media (max-width:760px){
+  .names2 .sw-hd{display:block} .names2 .sw-l{margin-top:18px;padding-bottom:0}
+  .wall .pf{grid-template-columns:1fr 1fr;margin-top:48px}
+}
+.cta{padding:16vh var(--m) 18vh}
+.wk-sel+.cta{padding-top:0}
+
+/* ------------------------------------------------------------------ The Dept. */
+/* the opening stays type only (the list of names and the opening photograph are gone): the people follow at once */
+.ag-d{padding-bottom:12vh}
+/* the people: each portrait large, the focal point, sides alternating; the name, title and email together beside it */
+.pb16{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);padding:14vh var(--m);align-items:start}
+.pb16 .pp{grid-column:1/7;grid-row:1;margin:0}
+.pb16 .pp img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;object-position:50% 20%;filter:grayscale(1)}
+.pb16 .pt{grid-column:8/13;grid-row:1}
+.pb16.flip .pp{grid-column:7/13}
+.pb16.flip .pt{grid-column:1/6}
+.pn{font-size:clamp(46px,5.2vw,100px);line-height:.92;letter-spacing:-.036em;font-weight:300;margin-top:-.08em}
+.pn span{display:block}
+.pw{margin-top:4.2vh;display:grid;row-gap:.25em;justify-items:start;font-size:clamp(15px,1.05vw,18px);line-height:1.4}
+.pw .lab{font-weight:500}
+.pw .u{text-decoration:none;border-bottom:1px solid var(--hair);transition:border-color .3s ease}
+.pw .u:hover,.pw .u:focus-visible{border-color:currentColor}
+.pl{margin-top:5vh;font-size:clamp(19px,1.45vw,25px);line-height:1.36;letter-spacing:-.006em;text-wrap:pretty}
+.pr{margin-top:3.2vh;font-size:max(15px,.98vw);line-height:1.56;color:var(--ink70)}
+.pr p+p{margin-top:1em}
+@media (max-width:760px){
+  .pb16{display:block;padding:80px var(--m) 90px}
+  .pb16 .pt{margin-top:30px} .pn{font-size:13vw}
+}
+/* Prepared. Connected. Present.: three equal statements across the page, after the people they describe, on the
+   charcoal the brand keeps for what it stands for (as Home's Not another booking company.) */
+.pcp16{padding:19vh var(--m) 20vh;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:calc(var(--g) * 2);background:var(--char);color:var(--cream)}
+.pcp16 h2{font-size:clamp(42px,4.9vw,96px);line-height:.94;letter-spacing:-.034em;font-weight:300}
+.pcp16 p{margin-top:3.6vh;font-size:clamp(19px,1.6vw,28px);line-height:1.3;max-width:12.5em;color:#D9D1C3;text-wrap:balance}
+@media (max-width:760px){
+  .pcp16{display:block;padding:90px var(--m)} .pcp16 div+div{margin-top:50px}
+  .pcp16 h2{font-size:14vw} .pcp16 p{margin-top:14px;font-size:20px}
+}
+
+/* ------------------------------------------------------------------ Contact */
+/* one screen: the line, the invitation and the address as the one action; the corridor framed tall on its vanishing
+   point beside them, dark walls on both sides as the space around it */
+.ct16{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);align-items:center;padding:3vh var(--m) 13vh;min-height:calc(100vh - 150px)}
+.ct16 .ct-t{grid-column:1/7}
+.ct16 .ct-h{font-size:clamp(44px,6vw,116px);line-height:.98;letter-spacing:-.032em;font-weight:300;white-space:normal;text-wrap:balance}
+.ct16 .ct-s{margin-top:3.2vh;font-size:clamp(20px,1.7vw,30px);line-height:1.3;color:var(--ink70)}
+.ct16 .go16{display:inline-block;margin-top:clamp(48px,10vh,120px)}
+.ct16 .ct-f{grid-column:8/13;margin:0}
+.ct16 .ct-f img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;object-position:50% 42%;filter:grayscale(1)}
+@media (max-width:760px){
+  .ct16{display:block;padding:20px var(--m) 90px;min-height:0}
+  .ct16 .ct-h{font-size:12vw} .ct16 .go16{margin-top:44px}
+  .ct16 .ct-f{margin-top:56px} .ct16 .ct-f img{aspect-ratio:3/4}
+}
+/* a call to action that wraps keeps its lines even (and its arrow with its last word) */
+.cta,.hall-r,.vb-go,.ct16 .ct-t{text-wrap:balance}

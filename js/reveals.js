@@ -1,7 +1,6 @@
 /* The Talent Dept. · round 13 · the quiet moments, once each as they arrive (native scroll, no blur):
-   headings rise in word by word, a line at a time; photographs open from a band and settle; "The right person can
-   change the whole conversation." travels slowly sideways with the scroll and stops when the scroll stops; the
-   names build in, the big names last. Reduced motion: everything simply shows. */
+   headings rise in word by word, a line at a time; photographs fade in where they stand (round 16: no movement);
+   the names build in, the big names last. Reduced motion: everything simply shows. */
 (function () {
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!('IntersectionObserver' in window)) return;
@@ -23,27 +22,18 @@
     ws.forEach(function (w, i) { var t = w.offsetTop; if (top === null || t > top + 4) { line++; top = t; } w.style.setProperty('--d', line * 2 + i * .25); });
     el.classList.add('rv');
   }
-  var heads = [].slice.call(document.querySelectorAll('.vb-h,.rp-h,.ag-t,.pb-n,.wk-h,.ct-h,.chairs2 .words,.svc-hd h2,.ag-p .q'));
+  var heads = [].slice.call(document.querySelectorAll('.vb-h,.ag-t,.ct-h,.chairs2 .words,.hall-h,.sw-h,.pn'));
   heads.forEach(split);
   // the names: each name a beat after the last, the big names last of all
   var wall = document.querySelector('.names2 .ws');
   if (wall) { [].slice.call(wall.querySelectorAll('.w')).forEach(function (w, i) { w.classList.add('nm'); w.style.setProperty('--d', i * .55 + (w.querySelector('.big') ? 6 : 0)); }); wall.classList.add('rv', 'rv-n'); }
-  // photographs
-  var figs = [].slice.call(document.querySelectorAll('.chairs2 figure,.vb-f,.rp-f,.wk-close .strip figure,.ct figure,.pb-p'));
-  figs.forEach(function (f, i) { f.classList.add('rv-f'); f.style.setProperty('--d', (i % 4) * 1.2); });
+  // photographs, the portraits too (round 16, Lisa: no movement): a quiet fade, nothing rises or opens
+  var figs = [].slice.call(document.querySelectorAll('.chairs2 figure,.vb-f,.hall-f,.wk-ph,.ct-f,.pp'));
+  figs.forEach(function (f) { f.classList.add('rv-o'); });
 
   var io = new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { rootMargin: '0px 0px -12% 0px', threshold: .01 });
   heads.concat(figs).forEach(function (el) { io.observe(el); }); if (wall) io.observe(wall);
 
-  // the right person: travels a little sideways with the scroll while it passes, and stops when the scroll stops
-  var rp = document.querySelector('.rp-h'), sec = rp && rp.closest('section'), ticking = false;
-  function move() {
-    ticking = false; if (!rp) return;
-    var r = sec.getBoundingClientRect(), p = (innerHeight - r.top) / (innerHeight + r.height);
-    p = p < 0 ? 0 : p > 1 ? 1 : p;
-    rp.style.transform = 'translate3d(' + ((.45 - p) * innerWidth * .16).toFixed(1) + 'px,0,0)';
-  }
-  if (rp) { addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(move); } }, { passive: true }); move(); }
 })();

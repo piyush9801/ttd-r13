@@ -2,6 +2,16 @@
    headings rise in word by word, a line at a time; photographs fade in where they stand (round 16: no movement);
    the names build in, the big names last. Reduced motion: everything simply shows. */
 (function () {
+  // the talent credits: hide a separator whose name ends a line, so no slash hangs at a line end (any motion setting)
+  var cns = [].slice.call(document.querySelectorAll('.wall .cn'));
+  function eol() {
+    cns.forEach(function (cn) {
+      var ws = [].slice.call(cn.querySelectorAll('.w'));
+      ws.forEach(function (w, i) { var sep = w.querySelector('.sep'); if (!sep) return; var nx = ws[i + 1];
+        sep.classList.toggle('eol', !!nx && nx.offsetTop > w.offsetTop + 2); });
+    });
+  }
+  if (cns.length) { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(eol); var et; addEventListener('resize', function () { clearTimeout(et); et = setTimeout(eol, 120); }); }
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!('IntersectionObserver' in window)) return;
   var root = document.documentElement; root.classList.add('rv-on');
@@ -24,9 +34,9 @@
   }
   var heads = [].slice.call(document.querySelectorAll('.vb-h,.ag-t,.ct-h,.chairs2 .words,.hall-h,.sw-h,.pn'));
   heads.forEach(split);
-  // the names: each name a beat after the last, the big names last of all
+  // the names: each name a beat after the last, in reading order
   var wall = document.querySelector('.names2 .ws');
-  if (wall) { [].slice.call(wall.querySelectorAll('.w')).forEach(function (w, i) { w.classList.add('nm'); w.style.setProperty('--d', i * .55 + (w.querySelector('.big') ? 6 : 0)); }); wall.classList.add('rv', 'rv-n'); }
+  if (wall) { [].slice.call(wall.querySelectorAll('.w')).forEach(function (w, i) { w.classList.add('nm'); w.style.setProperty('--d', i * .55); }); wall.classList.add('rv', 'rv-n'); }
   // photographs, the portraits too (round 16, Lisa: no movement): a quiet fade, nothing rises or opens
   var figs = [].slice.call(document.querySelectorAll('.chairs2 figure,.vb-f,.hall-f,.wk-ph,.ct-f,.pp'));
   figs.forEach(function (f) { f.classList.add('rv-o'); });

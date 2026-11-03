@@ -39,15 +39,16 @@
 
   var W = 1, SH = 1, em = 16, M = 20, dpr = 1, beside = true, lines = [], reps = [], rows = [], bars = [], textR = 0, ym = 0;
   var B = 2, END = 0, built = false;
-  var t0 = 0, revealAt = 0, tR = -1, speed = 1, px = -1e4, py = -1e4, inside = false, running = false, tPrev = 0, done = false;
+  var t0 = 0, revealAt = 0, tR = 0, started = false, speed = 1, px = -1e4, py = -1e4, inside = false, running = false, tPrev = 0, done = false;
+  var near = false;                            // the hand is close enough to lift a line that has not drawn back yet
   var lt = 0, la = 0;                          // the breath once the rhythm stands: its clock and its strength
 
   function measure() {
     var b = hb.getBoundingClientRect();
     W = b.width; SH = b.height; em = parseFloat(getComputedStyle(hb).fontSize) || 16;
     M = parseFloat(getComputedStyle(hl).paddingLeft) || 20;
-    beside = !(innerWidth < 900 || innerWidth / innerHeight < 1.1);
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    beside = !(innerWidth / innerHeight < 1.1 || (innerWidth < 900 && innerHeight > 540));
+    dpr = Math.min(3, window.devicePixelRatio || 1);
     cv.width = Math.round(W * dpr); cv.height = Math.round(SH * dpr);
     var cs = getComputedStyle(hl), mc = document.createElement('canvas').getContext('2d');
     mc.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily; try { mc.letterSpacing = cs.letterSpacing; } catch (e) {}
@@ -68,12 +69,16 @@
       r.x1 = Math.max(r.x1, x1);
     });
     rows.sort(function (a, c) { return a.y - c.y; });
+    // the last word's line and the Signal square meet on one device pixel, no hairline between them
+    var sq = lines[lines.length - 1], lw = lines[lines.length - 2];
+    if (sq && lw && sq.sig && Math.abs(sq.hy - lw.hy) < 2) { var jn = Math.round(sq.x0 * dpr) / dpr, wq = sq.L0; lw.x1 = jn; lw.L0 = jn - lw.x0; sq.x0 = jn; sq.x1 = jn + wq; }
     textR = Math.max.apply(null, rows.map(function (r) { return r.x1; }));
     var last = rows[rows.length - 1];
     // the rhythm: slim bars with air between them, centred in the space beside the statement on its centre line
     // (beside), or under it on the left edge (below)
-    B = em * .13; var Pt = em * .4, HMAX = beside ? em * 2.25 : em * 2, wide = (NB - 1) * Pt + B;
-    var x0w = beside ? textR + Math.max(em * 1.1, (W - M - textR - wide) / 2) : M;
+    var px1 = function (v) { return Math.round(v * dpr) / dpr; };
+    B = Math.max(1 / dpr, px1(em * .13)); var Pt = px1(em * .4), HMAX = beside ? em * 2.25 : em * 2, wide = (NB - 1) * Pt + B;
+    var x0w = px1(beside ? textR + Math.min(Math.max(em * 1.1, (W - M - textR - wide) / 2), em * 2) : M);
     ym = beside ? (rows[0].y + last.y) / 2 : last.y + em * 1.3 + HMAX / 2;
     bars = PROF.map(function (h, k) { return { k: k, x: x0w + B / 2 + k * Pt, H: HMAX * h, sig: k === CK, d: Math.abs(k - CK), g: 1, gv: 0 }; });
     // the replies: Draft dashes after each row to the margin, and in the pauses between the rows
@@ -96,7 +101,7 @@
   // the timing: the replies fold first; the lines draw back in reading order; the rhythm rises from the centre
   // outward as the last word is said
   function schedule() {
-    lines.forEach(function (l, j) { l.s = .22 + j * .075; l.D = .5; });
+    lines.forEach(function (l, j) { l.s = .22 + j * .075; l.D = l.sig ? .26 : .5; });
     var said = lines[lines.length - 1].s + lines[lines.length - 1].D * .55;
     bars.forEach(function (bb) { bb.c = said + bb.d * .085; });
     END = Math.max.apply(null, bars.map(function (bb) { return bb.c + .75; }));
@@ -106,8 +111,11 @@
   function pose(l, tau) {
     var u = tau >= 0 ? (tau - l.s) / l.D : -1;
     if (u > 0) {
-      var p = eio(u), len = l.L0 * (1 - p), xl = l.x0 + l.L0 * p;
-      return { cx: xl + len / 2, cy: l.hy, a: 0, len: len, th: l.T0, xl: xl, wipe: true, gone: p >= 1 };
+      if (l.a0 == null) { l.a0 = l.ha; l.shown = Math.abs(l.ha) * l.L0 / 2 > .75; }    // as the hand left it when the reveal fired
+      var p = eio(u), len = l.L0 * (1 - p), a = l.a0 * (1 - ss(u * 3)), xh = l.x0 + l.L0 * p;
+      // the far end stays on its hinge line; the near end draws back toward it
+      var xr = l.x0 + Math.cos(a) * l.L0, yr = l.hy + Math.sin(a) * l.L0, cx = xr - Math.cos(a) * len / 2, cy = yr - Math.sin(a) * len / 2;
+      return { cx: cx, cy: cy, a: a, len: len, th: l.T0, xl: xh, wipe: true, gone: p >= 1, shown: l.shown };
     }
     var a = l.ha;
     return { cx: l.x0 + Math.cos(a) * l.L0 / 2, cy: l.hy + Math.sin(a) * l.L0 / 2, a: a, len: l.L0, th: l.T0, rest: true, moved: Math.abs(a) * l.L0 / 2 };
@@ -127,7 +135,7 @@
     ctx.fillStyle = DRAFT;
     for (i = 0; i < reps.length; i++) {
       var r = reps[i], f = tau >= 0 ? eio((tau - r.f0) / .32) : 0, len = r.L0 * (1 - f);
-      if (len < .5) continue;
+      if (len < 3) continue;
       ctx.save(); ctx.translate(r.x0, r.hy); ctx.rotate(r.ha); ctx.fillRect(0, -r.T0 / 2, len, r.T0); ctx.restore();
       if (fig) fig.push([r.x0 + Math.cos(r.ha) * len / 2, r.hy + Math.sin(r.ha) * len / 2, len, r.T0, r.ha, DRAFT]);
     }
@@ -158,11 +166,12 @@
   // line, only what the line still covers stays hidden. While a line draws back the word is written out behind it
   function clip(l, o) {
     var css;
-    if (o.gone) css = 'none';
-    else if (o.wipe) css = 'inset(-.5em ' + Math.max(0, l.tl + l.tw - Math.max(o.xl, l.tl)).toFixed(1) + 'px -.5em -.5em)';
+    if (o.gone || (o.wipe && o.shown)) css = 'none';
+    else if (o.wipe && l.sig) css = 'polygon(0 0,0 0,0 0)';                              // the full stop waits for its Signal to go
+    else if (o.wipe) css = 'inset(-.5em ' + Math.max(0, l.tl + l.tw - o.xl).toFixed(1) + 'px -.5em -.5em)';
     else {
-      var near = Math.max(0, 1 - (o.moved || 0) / Math.max(2, em * .025)); near = near * near * (3 - 2 * near);
-      var hh = o.th / 2 + l.pad * near, c = Math.cos(o.a), s = Math.sin(o.a), hw = o.len / 2 + .5;
+      var full = (o.moved || 0) <= .75;
+      var hh = o.th / 2 + (full ? l.pad : 0), c = Math.cos(o.a), s = Math.sin(o.a), hw = o.len / 2 + .5;
       var pts = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(function (p) {
         return (o.cx + p[0] * c - p[1] * s - l.tl).toFixed(1) + 'px ' + (o.cy + p[0] * s + p[1] * c - l.tt).toFixed(1) + 'px';
       });
@@ -175,19 +184,22 @@
   // the hand: before the reveal it lifts lines a few degrees on their hinges; afterwards the bars rise a little toward it
   function springs(dt, tau) {
     var moving = false, i, k = 81, c = 2 * .7 * 9;
-    var pre = tau < .2;
+    var pre = !started; near = false;
     function lift(o, L, cap, x0, y) {
       var tg = 0;
       if (pre && inside) {
         var dx = Math.max(x0 - px, 0, px - (x0 + L)), dy = py - y, d = Math.sqrt(dx * dx + dy * dy * 2.2), R = em * 1.1;
-        var gg = Math.max(0, 1 - d / R); gg = gg * gg * (3 - 2 * gg);
-        tg = -Math.min(cap, em * .26 / L) * gg;
+        var gg = clamp((1 - d / R - .35) / .65, 0, 1); gg = gg * gg * (3 - 2 * gg);      // a dead zone: a line at the edge of the reach stays still
+        tg = -Math.min(cap, em * .26 / L) * gg; if (gg > 0) near = true;
       }
       o.hv += (k * (tg - o.ha) - c * o.hv) * dt; o.ha += o.hv * dt;
       if (Math.abs(o.hv) > .0005 || Math.abs(tg - o.ha) > .0005) moving = true;
     }
-    for (i = 0; i < lines.length; i++) lift(lines[i], lines[i].L0, .07, lines[i].x0, lines[i].hy);
-    for (i = 0; i < reps.length; i++) lift(reps[i], reps[i].L0, .05, reps[i].x0, reps[i].hy);
+    // once the reveal fires, every line and reply keeps the angle the hand left it at until it draws back or folds
+    if (!started) {
+      for (i = 0; i < lines.length; i++) lift(lines[i], lines[i].L0, .07, lines[i].x0, lines[i].hy);
+      for (i = 0; i < reps.length; i++) lift(reps[i], reps[i].L0, .05, reps[i].x0, reps[i].hy);
+    }
     if (tau >= END - .3) for (i = 0; i < bars.length; i++) {
       var bb = bars[i], tg2 = 1;
       if (inside) {
@@ -202,8 +214,8 @@
 
   function tick(now) {
     var dt = tPrev ? Math.min((now - tPrev) / 1000, 1 / 20) : 1 / 60; tPrev = now;
-    if (tR < 0 && built && now >= revealAt) start(now);
-    var tau = tR < 0 ? -1 : (now - tR) / 1000 * speed, moving = false;
+    if (!started && built && now >= revealAt) start(now);
+    var tau = started ? (now - tR) / 1000 * speed : -1, moving = false;
     var n = Math.max(1, Math.ceil(dt / (1 / 240)));
     for (var i = 0; i < n; i++) moving = springs(dt / n, tau) || moving;
     // once it stands, a slow breath runs through the rhythm from the centre, only while the hero is on screen
@@ -212,35 +224,40 @@
     if (la > 0 || laT > 0) { lt += dt; moving = true; }
     draw(tau);
     if (tau >= END && !done) { done = true; H.classList.add('said'); }
-    if (moving || tR < 0 || tau < END + .1) requestAnimationFrame(tick); else { running = false; tPrev = 0; }
+    if (moving || !started || tau < END + .1) requestAnimationFrame(tick); else { running = false; tPrev = 0; }
   }
   function kick() { if (!running && built) { running = true; requestAnimationFrame(tick); } }
-  function start(now, fast) { if (tR < 0) { tR = now || performance.now(); if (fast) speed = 1.4; kick(); } }
+  function start(now, fast) { if (!started) { started = true; tR = now || performance.now(); if (fast) speed = 1.4; kick(); } }
 
   stage.addEventListener('pointermove', function (e) {
     if (e.pointerType === 'touch') return;
+    if (STILL) return;
     var b = hb.getBoundingClientRect(); px = e.clientX - b.left; py = e.clientY - b.top; inside = true;
-    // while the hand plays with the lines the reveal waits for it to rest (never longer than about four seconds)
-    if (tR < 0) revealAt = Math.min(t0 + 4200, Math.max(revealAt, performance.now() + 900));
+    // while the hand is lifting a line the reveal waits for it to rest (never past 2.5 s after load)
+    if (!started && near) revealAt = Math.min(t0 + 2500, Math.max(revealAt, performance.now() + 700));
     kick();
   });
   stage.addEventListener('pointerleave', function () { inside = false; kick(); });
-  stage.addEventListener('pointerdown', function () { start(); });
-  addEventListener('scroll', function () { if (scrollY > 2) start(0, true); kick(); }, { passive: true });
-  addEventListener('keydown', function () { start(); });
+  stage.addEventListener('pointerdown', function () { if (!STILL) start(); });
+  addEventListener('scroll', function () { if (scrollY > 2 && !STILL) start(0, true); kick(); }, { passive: true });
+  addEventListener('keydown', function () { if (!STILL) start(); });
 
-  function finish() { tR = performance.now() - (END + 1) * 1000 / speed; done = true; H.classList.add('said'); }
+  function finish() { started = true; tR = performance.now() - (END + 1) * 1000 / speed; done = true; H.classList.add('said'); }
   var rt;
   function setup(first) {
     measure(); H.classList.add('ln-on');
     window.__h17 = { end: END, draw: function (t, loop) { la = loop == null ? 0 : 1; lt = loop || 0; draw(t); } };
     if (qs.has('lift')) { var lf = qs.get('lift').split(','), ll = lines[+lf[0]]; if (ll) ll.ha = -Math.abs(parseFloat(lf[1]) || .06); }
     if (TAU !== null) { draw(TAU); return; }
-    if (STILL || (first && scrollY > innerHeight * .5)) { t0 = performance.now() - 5000; finish(); draw(END + 1); if (!STILL) kick(); return; }
-    if (!first && tR >= 0) { if (!done) finish(); draw(END + 1); kick(); return; }   // resized after the reveal began
+    if (STILL || (first && (scrollY > innerHeight * .5 || performance.now() > 3500))) { t0 = performance.now() - 5000; finish(); draw(END + 1); if (!STILL) kick(); return; }
+    if (!first && started) { if (!done) finish(); draw(END + 1); kick(); return; }   // resized after the reveal began
     if (first) { t0 = performance.now(); revealAt = t0 + HOLD * 1000; }
     draw(-1); kick();
   }
-  addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { setup(false); }, 150); });
+  var lastW = innerWidth, coarse = !!(window.matchMedia && matchMedia('(pointer:coarse)').matches);
+  addEventListener('resize', function () {
+    if (coarse && innerWidth === lastW) return; lastW = innerWidth;
+    clearTimeout(rt); rt = setTimeout(function () { setup(false); }, 150);
+  });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setup(true); }); else setup(true);
 })();

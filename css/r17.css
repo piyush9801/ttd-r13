@@ -1,0 +1,37 @@
+/* The Talent Dept. · round 17 (3 Nov 2026). Loaded last. Lisa's 3 Nov notes: restraint, balance, precision. Less
+   movement, stronger composition, clearer communication. */
+
+/* ------------------------------------------------------------------ the hero (js/hero17.js)
+   One screen, nothing on the scroll: the page simply moves on. The statement a step smaller (84px at 1440, never
+   above 100px) so it and the rhythm beside it sit in balance. */
+.js:not(.still) .hero4.h17,.hero4.h17{height:auto}
+.h17 .stick{position:relative}
+.h17 .hb{font-size:min(calc((100vw - 2 * var(--m)) / 15.6), calc((100vh - 170px) / 6), 100px)}
+@media (max-width:899px),(max-aspect-ratio:11/10){
+  .js:not(.still) .hero4.h17,.hero4.h17{height:auto}
+  .h17 .hb{font-size:min(calc((100vw - 2 * var(--m)) / 8.2), calc((100svh - 150px) / 9.4))}
+}
+
+/* ------------------------------------------------------------------ The Work: the people with their shows
+   One row per show, most bookings first: the show set small in the left column on the first line of its people, the
+   names large beside it, as the services above set name and description. Always visible (phones too, the show above
+   its people); a hand on a row lifts it, its show turns Signal, the rest go quiet. */
+.wall .ws{display:grid;row-gap:clamp(20px,2.8vh,36px);font-size:clamp(26px,3.05vw,58px);line-height:1.16;letter-spacing:-.024em;font-weight:300}
+.wall .cred{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--g);align-items:baseline;outline:none}
+.wall .show-l{grid-column:1/4;font:500 clamp(11px,.82vw,13px)/1.3 var(--f);letter-spacing:.09em;text-transform:uppercase;color:var(--ink70);
+  padding-right:1em;transition:color .35s ease}
+.wall .cn{grid-column:4/13;text-wrap:pretty}
+.wall .cn .n{color:var(--ink);transition:color .35s ease}
+.wall .cn .n.big{font-size:1.28em}
+.wall:has(.cred:hover,.cred:focus-visible) .cred:not(:hover):not(:focus-visible) .n,
+.wall:has(.cred:hover,.cred:focus-visible) .cred:not(:hover):not(:focus-visible) .show-l{color:#ADA08A}
+.wall .cred:hover .show-l,.wall .cred:focus-visible .show-l{color:var(--coral)}
+/* the whole row answers, whichever name the hand is on (older rules dimmed every name but the one under the hand) */
+.wall:has(.cred:hover,.cred:focus-visible) .cred:is(:hover,:focus-visible) .cn .n{color:var(--ink)}
+.wall .cred:focus-visible .cn{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.14em}
+@media (max-width:760px){
+  .wall .ws{row-gap:24px;font-size:8.4vw;line-height:1.2}
+  .wall .cred{display:block}
+  .wall .show-l{margin:0 0 6px;font-size:10px}
+  .wall .cn .n.big{font-size:1.12em}
+}

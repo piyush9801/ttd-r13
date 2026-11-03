@@ -37,6 +37,8 @@
   // to compare: ?reveal=scroll puts the whole sequence on the scroll, the reveal too (no hold, nothing on its own)
   // the "everything on scroll" option is also built as its own page (the hero carries the class on-scroll)
   var SR = qs.get('reveal') === 'scroll' || H.classList.contains('on-scroll'), sp = 0;
+  // ?figma: every drawn bar is also laid out as a plain element, so the Figma export takes them as editable shapes
+  var FIG = qs.has('figma'), figBox = null;
   if (SR) H.classList.add('on-scroll');
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
@@ -180,6 +182,11 @@
       if (len < .5) continue;
       ctx.save(); ctx.translate(r.x0, r.hy); ctx.rotate(r.ha); ctx.fillRect(0, -r.T0 / 2, len, r.T0); ctx.restore();
     }
+    var figOut = FIG ? [] : null;
+    if (FIG) for (var fi = 0; fi < reps.length; fi++) {
+      var fr = reps[fi], ff = tau >= 0 ? eio((tau - fr.f0) / .3) : 0, fl = fr.L0 * (1 - ff);
+      if (fl >= .5) figOut.push([fr.x0 + fl / 2, fr.hy, fl, fr.T0, fr.ha, DRAFT]);
+    }
     var order = lines.map(function (l) { l.o = pose(l, tau, wv); return l; });
     order.sort(function (a, c) { return (a.o.rest ? 1 : 0) - (c.o.rest ? 1 : 0) || a.j - c.j; });
     for (var j = 0; j < order.length; j++) {
@@ -188,6 +195,14 @@
       if (o.gone || o.len < .5) continue;
       ctx.fillStyle = l.sig ? SIG : INK;
       ctx.save(); ctx.translate(o.cx, o.cy); ctx.rotate(o.a); ctx.fillRect(-o.len / 2, -o.th / 2, o.len, o.th); ctx.restore();
+      if (FIG) figOut.push([o.cx, o.cy, o.len, o.th, o.a, l.sig ? SIG : INK]);
+    }
+    if (FIG) {
+      if (!figBox) { figBox = document.createElement('div'); figBox.className = 'ln16dom'; figBox.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3'; hb.appendChild(figBox); }
+      figBox.innerHTML = figOut.map(function (b) {
+        return '<i style="position:absolute;display:block;left:' + (b[0] - b[2] / 2).toFixed(2) + 'px;top:' + (b[1] - b[3] / 2).toFixed(2) + 'px;width:' + b[2].toFixed(2) +
+          'px;height:' + b[3].toFixed(2) + 'px;background:' + b[5] + (b[4] ? ';transform:rotate(' + (b[4] * 57.29578).toFixed(3) + 'deg)' : '') + '"></i>';
+      }).join('');
     }
   }
 
@@ -206,6 +221,7 @@
       });
       css = 'polygon(evenodd,-9999px -9999px,9999px -9999px,9999px 9999px,-9999px 9999px,-9999px -9999px,' + pts.join(',') + ',' + pts[0] + ')';
     }
+    if (FIG) { var hide = o.rest && !(o.moved > 1); l.tx.style.clipPath = 'none'; l.tx.style.visibility = hide ? 'hidden' : ''; return; }
     if (css !== l.clip) { l.tx.style.clipPath = css; l.clip = css; }
   }
 
@@ -285,6 +301,7 @@
     measure(); H.classList.add('ln-on');
     window.__h16 = { end: END, draw: function (t, wv, loop) { la = loop == null ? 0 : 1; lt = loop || 0; draw(t, 9, wv || 0); },
       state: function () { return { w: w, la: la, lt: lt, running: running, done: done }; } };
+    if (qs.has('lift')) { var lf = qs.get('lift').split(','), ll = lines[+lf[0]]; if (ll) ll.ha = -Math.abs(parseFloat(lf[1]) || .07); }
     if (TAU !== null) { draw(TAU, 9, WQ); return; }
     if (STILL) { t0 = performance.now() - 5000; finish(); w = 1; draw(END + 1, 9, 1); return; }
     if (SR) { if (first) t0 = performance.now(); sp = progress(); draw(sp / .48 * END, first ? 0 : 9, ss((sp - .5) / .36)); kick(); return; }
